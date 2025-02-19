@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -27,6 +28,10 @@ type DatabaseConfig struct {
 }
 
 func MustLoad() *Config {
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: No .env file found, using environment variables")
+	}
+
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		log.Fatalf("CONFIG_PATH is not set")
@@ -40,6 +45,11 @@ func MustLoad() *Config {
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
+	}
+
+	cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	if cfg.JWTSecret == "" {
+		log.Fatalf("JWT_SECRET is required but not set")
 	}
 
 	return &cfg

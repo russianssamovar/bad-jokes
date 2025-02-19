@@ -35,8 +35,10 @@ func main() {
 	jokesHandler := handlers.NewJokesHandler(jokesRepo)
 	authHandler := handlers.NewAuthHandler(userRepo, cfg)
 
+	authMiddleware := middleware.NewAuthMiddleware(cfg)
+
 	mux := http.NewServeMux()
-	setupRoutes(mux, jokesHandler, authHandler)
+	setupRoutes(mux, jokesHandler, authHandler, authMiddleware)
 	handler := corsMiddleware(mux)
 
 	listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
@@ -49,11 +51,11 @@ func main() {
 	}
 }
 
-func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHandler *handlers.AuthHandler) {
+func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHandler *handlers.AuthHandler, authMiddleware *middleware.AuthMiddleware) {
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
 
-	mux.Handle("/api/jokes", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/jokes", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			jokesHandler.ListJokes(w, r)
@@ -64,11 +66,11 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 		}
 	})))
 
-	mux.Handle("/api/jokes/vote", middleware.AuthMiddleware(http.HandlerFunc(jokesHandler.VoteEntity)))
-	mux.Handle("/api/jokes/react", middleware.AuthMiddleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
-	mux.Handle("/api/jokes/delete", middleware.AuthMiddleware(http.HandlerFunc(jokesHandler.DeleteJoke)))
+	mux.Handle("/api/jokes/vote", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.VoteEntity)))
+	mux.Handle("/api/jokes/react", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
+	mux.Handle("/api/jokes/delete", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.DeleteJoke)))
 
-	mux.Handle("/api/comments", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/api/comments", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			jokesHandler.ListComments(w, r)
@@ -79,8 +81,8 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 		}
 	})))
 
-	mux.Handle("/api/comments/vote", middleware.AuthMiddleware(http.HandlerFunc(jokesHandler.VoteEntity)))
-	mux.Handle("/api/comments/react", middleware.AuthMiddleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
+	mux.Handle("/api/comments/vote", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.VoteEntity)))
+	mux.Handle("/api/comments/react", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
