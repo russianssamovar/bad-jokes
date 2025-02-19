@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"badJokes/api/internal/config"
 	"badJokes/api/internal/storage/sqlite/user"
 	"encoding/json"
 	"net/http"
@@ -10,14 +11,16 @@ import (
 )
 
 type AuthHandler struct {
-	repo *user.Repository
+	repo      *user.Repository
+	jwtSecret []byte
 }
 
-func NewAuthHandler(repo *user.Repository) *AuthHandler {
-	return &AuthHandler{repo: repo}
+func NewAuthHandler(repo *user.Repository, cfg *config.Config) *AuthHandler {
+	return &AuthHandler{
+		repo:      repo,
+		jwtSecret: []byte(cfg.JWTSecret),
+	}
 }
-
-var jwtSecret = []byte("your-secret-key")
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var input struct {
@@ -65,7 +68,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString(jwtSecret)
+	tokenString, err := token.SignedString(h.jwtSecret)
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return

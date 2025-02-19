@@ -33,7 +33,7 @@ func main() {
 	userRepo := user.NewUserRepository(db)
 
 	jokesHandler := handlers.NewJokesHandler(jokesRepo)
-	authHandler := handlers.NewAuthHandler(userRepo)
+	authHandler := handlers.NewAuthHandler(userRepo, cfg)
 
 	mux := http.NewServeMux()
 	setupRoutes(mux, jokesHandler, authHandler)
