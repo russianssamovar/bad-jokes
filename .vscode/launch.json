@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch BadJokes App",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/api/main.go",
+            "args": [],
+            "env": {
+                "CONFIG_PATH": "${workspaceFolder}/api/config/local.yaml"
+            }
+        },
+        {
+            "name": "Attach to BadJokes Process",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}
