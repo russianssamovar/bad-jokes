@@ -18,7 +18,6 @@ WORKDIR /app
 
 COPY --from=builder /app/badJokes /app/badJokes
 COPY config ./config
-COPY .env .env
 COPY storage/badJokes.db /app/storage/badJokes.db
 
 RUN chmod +x /app/badJokes

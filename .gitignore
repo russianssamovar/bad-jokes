@@ -9,6 +9,4 @@ badJokes
 
 tmp/
 
-.env
-
 local.yaml
