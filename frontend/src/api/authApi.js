@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_API_URL = process.env.REACT_APP_API_URL || "http://localhost:9999";
+const BASE_API_URL = import.meta.env.REACT_APP_API_URL || "http://localhost:9999";
 const API_URL = `${BASE_API_URL}/api/auth`;
 
 export const registerUser = async (username, email, password) => {
