@@ -3,7 +3,7 @@ db:
   connection_string: "./storage/badJokes.db"
   driver: sqlite3
 http_server:
-  address: "localhost:9999"
+  address: "0.0.0.0:9999"
   timeout: "4s"
   idle_timeout: "60s"
 jwt_secret: "your-very-secure-secret-key"
