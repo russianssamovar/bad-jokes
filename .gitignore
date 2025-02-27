@@ -8,5 +8,3 @@ badJokes
 *.log
 
 tmp/
-
-.env
