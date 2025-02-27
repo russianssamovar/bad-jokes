@@ -7,7 +7,7 @@ RUN go mod tidy
 
 COPY . .
 
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=arm64
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 RUN go build -o badJokes .
 
 FROM alpine:latest
