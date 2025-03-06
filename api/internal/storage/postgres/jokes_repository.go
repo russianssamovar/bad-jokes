@@ -40,17 +40,30 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 			j.author_id,
 			j.created_at,
 			j.modified_at,
-			COUNT(DISTINCT v.id) AS vote_count,
+			(
+				SELECT COALESCE(SUM(CASE WHEN vote_type = 'plus' THEN 1 WHEN vote_type = 'minus' THEN -1 ELSE 0 END), 0)
+                FROM votes WHERE entity_id = j.id AND entity_type = 'joke'
+			) AS vote_count,
 			COUNT(DISTINCT c.id) AS comment_count,
-			COALESCE(STRING_AGG(DISTINCT i.type, ','), '') AS reactions,
+			(
+				SELECT json_object_agg(type, count) 
+				FROM (
+					SELECT type, COUNT(*) as count 
+					FROM interactions 
+					WHERE entity_id = j.id AND entity_type = 'joke' 
+					GROUP BY type
+				) reaction_counts
+			) AS reactions_json,
 			COALESCE(uv.vote_type, '') AS user_vote,
-			COALESCE(STRING_AGG(DISTINCT uiv.type, ','), '') AS user_reactions
+			COALESCE(
+				(SELECT array_to_string(array_agg(type), ',')
+				 FROM interactions 
+				 WHERE entity_id = j.id AND entity_type = 'joke' AND user_id = $2), 
+				''
+			) AS user_reactions
 		FROM jokes j
-		LEFT JOIN votes v ON j.id = v.entity_id AND v.entity_type = 'joke'
 		LEFT JOIN comments c ON j.id = c.joke_id
-		LEFT JOIN interactions i ON j.id = i.entity_id AND i.entity_type = 'joke'
 		LEFT JOIN votes uv ON j.id = uv.entity_id AND uv.entity_type = 'joke' AND uv.user_id = $1
-		LEFT JOIN interactions uiv ON j.id = uiv.entity_id AND uiv.entity_type = 'joke' AND uiv.user_id = $2
 		GROUP BY j.id, j.body, j.author_id, j.created_at, j.modified_at, uv.vote_type
 		ORDER BY j.%s %s
 		LIMIT $3 OFFSET $4
@@ -64,7 +77,7 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 	var jokes []models.Joke
 	for rows.Next() {
 		var joke models.Joke
-		var reactions sql.NullString
+		var reactionsJSON sql.NullString
 		var userVote sql.NullString
 		var userReactions sql.NullString
 		if err := rows.Scan(
@@ -75,25 +88,36 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 			&joke.ModifiedAt,
 			&joke.Social.Pluses,
 			&joke.CommentCount,
-			&reactions,
+			&reactionsJSON,
 			&userVote,
 			&userReactions,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan joke: %w", err)
 		}
+		
 		reactionMap := map[string]int{}
-		if reactions.Valid && reactions.String != "" {
-			for _, reaction := range strings.Split(reactions.String, ",") {
-				reaction = strings.TrimSpace(reaction)
-				if reaction != "" {
-					reactionMap[reaction]++
+		if reactionsJSON.Valid && reactionsJSON.String != "" && reactionsJSON.String != "null" {
+			jsonStr := strings.Trim(reactionsJSON.String, "{}")
+			if jsonStr != "" {
+				pairs := strings.Split(jsonStr, ",")
+				for _, pair := range pairs {
+					kv := strings.Split(pair, ":")
+					if len(kv) == 2 {
+						key := strings.Trim(kv[0], "\" ")
+						val := strings.Trim(kv[1], " ")
+						count := 0
+						fmt.Sscanf(val, "%d", &count)
+						reactionMap[key] = count
+					}
 				}
 			}
 		}
 		joke.Social.Reactions = reactionMap
+		
 		if userVote.Valid && userVote.String != "" {
 			joke.Social.User = &models.UserInteraction{VoteType: userVote.String}
 		}
+		
 		if userReactions.Valid && userReactions.String != "" {
 			userReactionsArray := strings.Split(userReactions.String, ",")
 			for i, r := range userReactionsArray {

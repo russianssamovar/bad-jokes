@@ -14,11 +14,22 @@ export const loginUser = async (email, password) => {
 };
 
 export const getCurrentUser = () => {
-  const token = localStorage.getItem("token");
-  if (!token) return null;
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
 
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  return { userId: payload.user_id, username: payload.username, token };
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload || !payload.user_id || !payload.username) return null;
+
+    return { userId: payload.user_id, username: payload.username, token };
+  } catch (error) {
+    console.error("Error parsing user token:", error);
+    localStorage.removeItem("token");
+    return null;
+  }
 };
 
 

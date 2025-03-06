@@ -41,9 +41,9 @@ const AuthPage = () => {
 
     try {
       const { token } = await registerUser(
+          formData.register.username,
           formData.register.email,
-          formData.register.password,
-          formData.register.username
+          formData.register.password
       );
       localStorage.setItem("token", token);
       navigate("/");
