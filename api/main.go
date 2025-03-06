@@ -5,22 +5,20 @@ import (
 	"badJokes/internal/http-server/handlers"
 	"badJokes/internal/http-server/middleware"
 	"badJokes/internal/lib/sl"
-	"badJokes/internal/storage/sqlite/jokes"
-	"badJokes/internal/storage/sqlite/user"
+	"badJokes/internal/storage"
 	"database/sql"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
 
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	cfg := config.MustLoad()
 	log := setupLogger(cfg.Env)
-
-	log.Info("Starting bad-jokes app", slog.String("env", cfg.Env))
 
 	db, err := sql.Open(cfg.Db.Driver, cfg.Db.ConnectionString)
 	if err != nil {
@@ -29,8 +27,13 @@ func main() {
 	}
 	defer db.Close()
 
-	jokesRepo := jokes.NewJokesRepository(db)
-	userRepo := user.NewUserRepository(db)
+	if err := storage.Migrate(db, "storage/migrations"); err != nil {
+		log.Error("Failed to run migrations", sl.Err(err))
+		os.Exit(1)
+	}
+
+	userRepo := storage.NewUserRepository(cfg.Db.Driver, db)
+	jokesRepo := storage.NewJokesRepository(cfg.Db.Driver, db)
 
 	jokesHandler := handlers.NewJokesHandler(jokesRepo)
 	authHandler := handlers.NewAuthHandler(userRepo, cfg)
@@ -90,27 +93,21 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
 
 func setupLogger(env string) *slog.Logger {
-	var log *slog.Logger
-
 	switch env {
 	case "local":
-		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	case "prod":
-		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+		return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	default:
-		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	}
-
-	return log
 }

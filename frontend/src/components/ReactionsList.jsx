@@ -17,34 +17,51 @@ const reactionMap = {
 const availableReactions = Object.keys(reactionMap);
 
 const ReactionsList = ({ jokeId, initialReactions, initialUserReactions, isLoggedIn }) => {
-  const [reactions, setReactions] = useState(initialReactions);
-  const [userReactions, setUserReactions] = useState(new Set(initialUserReactions));
+  const [reactions, setReactions] = useState({ ...initialReactions });
+  const [userReactions, setUserReactions] = useState(new Set(initialUserReactions || []));
   const [showReactionPopup, setShowReactionPopup] = useState(false);
+  const [reactionEffect, setReactionEffect] = useState(null);
+  const [removalEffect, setRemovalEffect] = useState(null); 
   const popupRef = useRef(null);
+  const buttonRef = useRef(null);
 
   useEffect(() => {
-    setReactions(initialReactions);
-    setUserReactions(new Set(initialUserReactions));
+    setReactions({ ...initialReactions });
+    setUserReactions(new Set(initialUserReactions || []));
   }, [initialReactions, initialUserReactions]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (popupRef.current && !popupRef.current.contains(event.target)) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
         setShowReactionPopup(false);
       }
     };
 
     if (showReactionPopup) {
       document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
     }
 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showReactionPopup]);
 
-  const handleReactionClick = async (reaction) => {
+  const handleReactionClick = async (reaction, event) => {
     if (!isLoggedIn) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const effectPosition = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+
+    if (userReactions.has(reaction)) {
+      setRemovalEffect({ reaction, ...effectPosition });
+      setTimeout(() => setRemovalEffect(null), 600);
+    } else {
+      setReactionEffect({ reaction, ...effectPosition });
+      setTimeout(() => setReactionEffect(null), 600);
+    }
 
     setReactions((prevReactions) => {
       const updatedReactions = { ...prevReactions };
@@ -70,41 +87,66 @@ const ReactionsList = ({ jokeId, initialReactions, initialUserReactions, isLogge
   };
 
   return (
-    <div className="reactions-container">
+    <div className="reactions-wrapper">
       <div className="reactions">
-        {Object.entries(reactions).map(([reaction, count]) => (
-          <div
-            key={reaction}
-            className="reaction"
-            onClick={() => handleReactionClick(reaction)}
-            style={{
-              background: userReactions.has(reaction) ? "#d1e7fd" : "#f0f2f5",
-              cursor: isLoggedIn ? "pointer" : "not-allowed",
-            }}
-          >
-            {reactionMap[reaction]} <span>{count}</span>
-          </div>
-        ))}
-
+        {Object.entries(reactions)
+          .filter(([_, count]) => count > 0)
+          .map(([reaction, count]) => (
+            <div
+              key={reaction}
+              className={`reaction ${userReactions.has(reaction) ? "active" : ""}`}
+              onClick={(e) => handleReactionClick(reaction, e)}
+            >
+              {reactionMap[reaction]} <span>{count}</span>
+            </div>
+          ))}
+          
         <div
           className="reaction add-reaction"
-          onClick={isLoggedIn ? () => setShowReactionPopup(!showReactionPopup) : undefined}
-          style={{ cursor: isLoggedIn ? "pointer" : "not-allowed" }}
+          ref={buttonRef}
+          onClick={() => isLoggedIn && setShowReactionPopup(!showReactionPopup)}
         >
           ➕
         </div>
       </div>
-
-      {showReactionPopup && (
-        <div className="reaction-popup" ref={popupRef}>
+      
+      {showReactionPopup && buttonRef.current && (
+        <div
+          className="reaction-popup"
+          ref={popupRef}
+          style={{
+            left: `${buttonRef.current.closest(".reactions-wrapper").getBoundingClientRect().width}px`,
+            top: buttonRef.current.getBoundingClientRect().bottom.toFixed(),
+          }}
+        >
           {availableReactions.map((reaction) => (
             <div
               key={reaction}
-              className="reaction-option"
-              onClick={() => handleReactionClick(reaction)}
+              className={`reaction-option ${userReactions.has(reaction) ? "active" : ""}`}
+              onClick={(e) => handleReactionClick(reaction, e)}
             >
               {reactionMap[reaction]}
             </div>
+          ))}
+        </div>
+      )}
+
+      {reactionEffect && (
+        <div className="reaction-splash-container" style={{ left: reactionEffect.x, top: reactionEffect.y }}>
+          {[...Array(8)].map((_, i) => (
+            <span key={i} className="reaction-splash" data-reaction={reactionEffect.reaction}>
+              {reactionMap[reactionEffect.reaction]}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {removalEffect && (
+        <div className="reaction-splash-container" style={{ left: removalEffect.x, top: removalEffect.y }}>
+          {[...Array(8)].map((_, i) => (
+            <span key={i} className="reaction-splash removal" data-reaction={removalEffect.reaction}>
+              {reactionMap[removalEffect.reaction]}
+            </span>
           ))}
         </div>
       )}

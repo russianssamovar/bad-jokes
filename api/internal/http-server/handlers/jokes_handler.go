@@ -2,17 +2,17 @@ package handlers
 
 import (
 	"badJokes/internal/http-server/middleware"
-	"badJokes/internal/storage/sqlite/jokes"
+	"badJokes/internal/storage"
 	"encoding/json"
 	"net/http"
 	"strconv"
 )
 
 type JokesHandler struct {
-	repo *jokes.Repository
+	repo storage.JokesRepository
 }
 
-func NewJokesHandler(repo *jokes.Repository) *JokesHandler {
+func NewJokesHandler(repo storage.JokesRepository) *JokesHandler {
 	return &JokesHandler{repo: repo}
 }
 

@@ -1,4 +1,4 @@
-package jokes
+package models
 
 type Joke struct {
 	ID           int64              `json:"id"`

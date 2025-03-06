@@ -1,9 +1,11 @@
-/* --- Общие стили --- */
+/* --- ГЛОБАЛЬНЫЕ СТИЛИ --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 body {
@@ -15,93 +17,7 @@ body {
   padding-top: 80px;
 }
 
-/* --- Шапка (header) --- */
-.header {
-  width: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: white;
-  padding: 15px 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 1000;
-}
-
-.header h1 {
-  font-size: 20px;
-  color: #333;
-}
-
-.header .auth-button {
-  background: blue;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s ease-in-out;
-}
-
-.header .auth-button:hover {
-  background: darkblue;
-}
-
-.header .user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #333;
-  font-weight: bold;
-}
-
-/* --- Панель действий (Action Panel) --- */
-.action-panel {
-  position: absolute;
-  top: 100px;
-  right: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 999;
-}
-
-.action-button {
-  background: blue;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s ease-in-out;
-}
-
-.action-button:hover {
-  background: darkblue;
-}
-
-@media (max-width: 768px) {
-  .action-panel {
-    right: 20px;
-    top: 90px;
-  }
-}
-
-/* --- Лента шуток (контейнер) --- */
-.container {
-  width: 600px;
-  max-width: 90%;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-/* --- Карточка шутки --- */
+/* --- КАРТОЧКА ШУТКИ --- */
 .joke-card {
   background: #ffffff;
   border: 1px solid #ddd;
@@ -109,250 +25,352 @@ body {
   padding: 15px;
   margin-bottom: 15px;
   box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: flex-start;
   position: relative;
+  width: 700px;
+  max-width: 100%;
 }
 
-/* --- Блок рейтинга (плюс/минус + счетчик) --- */
-.rating {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-right: 15px;
-}
-
-.rating button {
+/* --- КНОПКА УДАЛЕНИЯ (КРЕСТИК) --- */
+.delete-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 22px;
-  color: #888;
-  transition: color 0.2s ease-in-out;
+  padding: 5px;
+  transition: transform 0.2s ease-in-out;
 }
 
-.rating .upvote:hover {
-  color: green;
+.delete-button:hover {
+  transform: rotate(90deg);
 }
 
-.rating .downvote:hover {
-  color: red;
+/* --- ТЕКСТ ШУТКИ --- */
+.joke-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  margin-bottom: 20px;
 }
 
-.rating .score {
-  font-size: 18px;
-  font-weight: bold;
-  margin: 5px 0;
-}
-
-/* --- Контент шутки --- */
-.joke-content {
-  flex: 1;
-}
-
-/* --- Блок реакций --- */
-.reactions-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  position: relative;
-}
-
-.reactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  align-items: center;
-}
-
-.reaction {
-  display: flex;
-  align-items: center;
-  background: #f0f2f5;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s ease-in-out;
-}
-
-.reaction:hover {
-  background: #e0e2e5;
-}
-
-.reaction.active {
-  background: #d1e7fd;
-}
-
-.reaction span {
-  margin-left: 5px;
-}
-
-/* --- Кнопка "+" для выбора реакции --- */
-.add-reaction {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 35px;
-  height: 35px;
-  font-size: 20px;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background 0.2s ease-in-out;
-}
-
-.add-reaction:hover {
-  background: #f0f2f5;
-}
-
-/* --- Popup выбора реакции --- */
-.reaction-popup-wrapper {
-  position: relative;
-}
-
-.reaction-popup {
-  position: absolute;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(4, 40px);
-  gap: 8px;
-  max-width: 240px;
-  min-width: 160px;
-  z-index: 100;
-}
-
-.reaction-option {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  cursor: pointer;
-  transition: background 0.2s;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-}
-
-.reaction-option:hover {
-  background: #f0f2f5;
-}
-
-/* --- Кнопка удаления шутки --- */
-.author-tools {
+/* --- НИЖНЯЯ ПАНЕЛЬ (РЕАКЦИИ + ГОЛОСОВАНИЕ + КОММЕНТЫ) --- */
+.bottom-panel {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 10px;
 }
 
-.delete-button {
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 20px;
-  cursor: pointer;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  transition: color 0.3s ease-in-out;
+/* --- ГОЛОСОВАНИЕ (ПРАВЫЙ НИЖНИЙ УГОЛ) --- */
+.vote-comment-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.delete-button:hover {
-  color: red;
-}
-
-/* --- Блок комментариев --- */
-.comments {
-  margin-top: 10px;
-}
-
-.comments h4 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.comments input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.comments button {
-  margin-top: 5px;
-  padding: 8px 12px;
-  background: blue;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s ease-in-out;
-}
-
-.comments button:hover {
-  background: darkblue;
-}
-
-/* --- Кнопки логина/регистрации --- */
-.auth-form {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.auth-form h2 {
-  text-align: center;
-  margin-bottom: 15px;
-}
-
-.auth-form input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.auth-form button {
-  width: 100%;
-  padding: 10px;
-  background: blue;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.auth-form button:hover {
-  background: darkblue;
-}
-
-/* --- Загрузка (анимация) --- */
-.loading {
-  text-align: center;
-  margin-top: 20px;
-  font-weight: bold;
-}
-
+/* --- КНОПКА КОММЕНТАРИЕВ --- */
 .comment-count {
   font-size: 14px;
   color: #666;
-  margin-top: 10px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.comment-count:hover {
+  color: black;
+}
+
+/* Если нет места внизу, показываем сверху */
+@media (max-height: 500px) {
+  .reaction-popup {
+    bottom: auto;
+    top: 45px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reaction-option {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  font-size: 26px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 45px;
+  height: 45px;
+  border-radius: 10px;
+}
+
+.reaction-option:hover {
+  background: #f0f2f5;
+}
+
+/* --- АДАПТИВНОСТЬ (МОБИЛЬНЫЕ УСТРОЙСТВА) --- */
+@media (max-width: 768px) {
+  .joke-card {
+    width: 100%;
+  }
+
+  .vote-comment-container {
+    flex-direction: row;
+    justify-content: flex-end;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .reaction-popup {
+    grid-template-columns: repeat(3, 45px);
+  }
+}
+
+/* --- Горизонтальное голосование --- */
+.voting-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+/* --- Кнопки голосования --- */
+.voting-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s ease-in-out;
+  position: relative;
+  overflow: visible;
+}
+
+/* --- Деактивированные кнопки --- */
+.voting-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* --- SVG стрелки голосования --- */
+.voting-button svg {
+  width: 24px;
+  height: 24px;
+  stroke: gray;
+  fill: none;
+  transition: stroke 0.2s ease-in-out;
+}
+
+/* --- Обычный ховер --- */
+.voting-button:hover svg {
+  stroke: black;
+}
+
+/* --- Выбранная стрелка вверх (зелёная) --- */
+.active-upvote svg {
+  stroke: #2ecc71; /* Ярко-зелёный */
+}
+
+/* --- Выбранная стрелка вниз (красная) --- */
+.active-downvote svg {
+  stroke: #e74c3c; /* Красноватый */
+}
+
+/* --- Контейнер для брызг --- */
+.vote-splash-container {
+  position: absolute;
+  top: 50%;
+  left: 43%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+/* --- Брызги --- */
+.vote-splash {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: splashEffect 0.5s ease-out forwards;
+}
+
+/* --- Брызги вверх (зелёные) --- */
+.upvote-splash {
+  background-color: #2ecc71;
+  box-shadow: 0 0 5px #2ecc71;
+  transform: translate(-5px, -10px); /* Чуть левее и выше */
+}
+
+/* --- Брызги вниз (красные) --- */
+.downvote-splash {
+  background-color: #e74c3c;
+  box-shadow: 0 0 5px #e74c3c;
+}
+
+/* --- Анимация разлета брызг конусом --- */
+@keyframes splashEffect {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) scale(1.5);
+  }
+}
+
+/* --- Подкорректированные углы разлёта брызг вверх --- */
+.upvote-splash:nth-child(1) { --x: -12px; --y: -22px; }
+.upvote-splash:nth-child(2) { --x: -2px; --y: -28px; }
+.upvote-splash:nth-child(3) { --x: 8px; --y: -22px; }
+.upvote-splash:nth-child(4) { --x: -17px; --y: -12px; }
+.upvote-splash:nth-child(5) { --x: 13px; --y: -12px; }
+.upvote-splash:nth-child(6) { --x: -2px; --y: -17px; }
+
+/* --- Для downvote (разлёт вниз, без изменений) --- */
+.downvote-splash:nth-child(1) { --x: -10px; --y: 20px; }
+.downvote-splash:nth-child(2) { --x: 0px; --y: 25px; }
+.downvote-splash:nth-child(3) { --x: 10px; --y: 20px; }
+.downvote-splash:nth-child(4) { --x: -15px; --y: 10px; }
+.downvote-splash:nth-child(5) { --x: 15px; --y: 10px; }
+.downvote-splash:nth-child(6) { --x: 0px; --y: 15px; }
+/* --- Фон под блоком реакций --- */
+.reactions-wrapper {
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* --- Обычные реакции --- */
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* --- Отображение реакций --- */
+.reaction {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  gap: 4px;
+}
+
+/* --- Подсветка активной реакции пользователя --- */
+.reaction.active {
+  background: #d1e7fd;
+  font-weight: bold;
+}
+
+/* --- Кнопка "+" для выбора реакции --- */
+.add-reaction {
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-reaction:hover {
+  background: #f0f2f5;
+}
+
+/* --- Всплывающее меню реакций --- */
+.reaction-popup {
+  position: absolute;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 45px);
+  gap: 10px;
+  z-index: 100;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* --- Подсветка реакций в меню, если пользователь уже нажал --- */
+.reaction-option.active {
+  background: #d1e7fd;
+  font-weight: bold;
+}
+
+/* --- Анимация появления меню --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* --- АНИМАЦИЯ БРЫЗГ ПРИ НАЖАТИИ НА РЕАКЦИЮ --- */
+.reaction-splash-container {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.reaction-splash {
+  position: absolute;
+  font-size: 22px;
+  opacity: 0;
+  animation: reactionSplashEffect 0.6s ease-out forwards;
+}
+
+/* --- Анимация разлёта реакций --- */
+@keyframes reactionSplashEffect {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) scale(2) rotate(var(--rotate));
+  }
+}
+
+/* --- Анимация втягивания при удалении реакции --- */
+.reaction-splash.removal {
+  opacity: 0.6;
+  animation: reactionRemovalEffect 0.6s ease-in forwards;
+}
+
+/* --- Углы разлёта (расширено) --- */
+.reaction-splash:nth-child(1) { --x: -40px; --y: -50px; --rotate: -20deg; }
+.reaction-splash:nth-child(2) { --x: 0px; --y: -60px; --rotate: 15deg; }
+.reaction-splash:nth-child(3) { --x: 40px; --y: -50px; --rotate: -10deg; }
+.reaction-splash:nth-child(4) { --x: -45px; --y: -30px; --rotate: 25deg; }
+.reaction-splash:nth-child(5) { --x: 45px; --y: -30px; --rotate: -25deg; }
+.reaction-splash:nth-child(6) { --x: -30px; --y: -40px; --rotate: 10deg; }
+.reaction-splash:nth-child(7) { --x: 30px; --y: -40px; --rotate: -15deg; }
+.reaction-splash:nth-child(8) { --x: 0px; --y: -45px; --rotate: 20deg; }
+
+/* --- Анимация втягивания (удаление реакции) --- */
+@keyframes reactionRemovalEffect {
+  0% { opacity: 0.6; transform: translate(var(--x), var(--y)) scale(1) rotate(var(--rotate)); }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); }
 }

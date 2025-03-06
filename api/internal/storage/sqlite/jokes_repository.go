@@ -1,6 +1,7 @@
-package jokes
+package sqlite
 
 import (
+	"badJokes/internal/models"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -10,15 +11,15 @@ import (
 
 var ErrJokeNotFound = fmt.Errorf("joke not found")
 
-type Repository struct {
+type JokesRepository struct {
 	db *sql.DB
 }
 
-func NewJokesRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+func NewJokesRepository(db *sql.DB) *JokesRepository {
+	return &JokesRepository{db: db}
 }
 
-func (r *Repository) Insert(body string, authorID int64) (int64, error) {
+func (r *JokesRepository) Insert(body string, authorID int64) (int64, error) {
 	stmt, err := r.db.Prepare("INSERT INTO jokes(body, author_id, created_at, modified_at) VALUES(?, ?, datetime('now'), datetime('now'))")
 	if err != nil {
 		return 0, fmt.Errorf("failed to prepare statement: %w", err)
@@ -38,7 +39,7 @@ func (r *Repository) Insert(body string, authorID int64) (int64, error) {
 	return id, nil
 }
 
-func (r *Repository) ListPage(page, pageSize int, sortField, order string, currentUserID int64) ([]Joke, error) {
+func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, currentUserID int64) ([]models.Joke, error) {
 	offset := (page - 1) * pageSize
 	query := `
 		SELECT j.id, j.body, j.author_id, j.created_at, j.modified_at, 
@@ -63,9 +64,9 @@ func (r *Repository) ListPage(page, pageSize int, sortField, order string, curre
 	}
 	defer rows.Close()
 
-	var jokes []Joke
+	var jokes []models.Joke
 	for rows.Next() {
-		var joke Joke
+		var joke models.Joke
 		var reactions sql.NullString
 		var userVote sql.NullString
 		var userReactions sql.NullString
@@ -85,7 +86,7 @@ func (r *Repository) ListPage(page, pageSize int, sortField, order string, curre
 		joke.Social.Reactions = reactionMap
 
 		if userVote.Valid && userVote.String != "" {
-			joke.Social.User = &UserInteraction{VoteType: userVote.String}
+			joke.Social.User = &models.UserInteraction{VoteType: userVote.String}
 		}
 
 		if userReactions.Valid && userReactions.String != "[]" {
@@ -94,7 +95,7 @@ func (r *Repository) ListPage(page, pageSize int, sortField, order string, curre
 				userReactionsArray[i] = strings.TrimSpace(r)
 			}
 			if joke.Social.User == nil {
-				joke.Social.User = &UserInteraction{}
+				joke.Social.User = &models.UserInteraction{}
 			}
 			joke.Social.User.Reactions = userReactionsArray
 		}
@@ -105,7 +106,7 @@ func (r *Repository) ListPage(page, pageSize int, sortField, order string, curre
 	return jokes, nil
 }
 
-func (r *Repository) AddVote(entityType string, entityID, userID int64, voteType string) error {
+func (r *JokesRepository) AddVote(entityType string, entityID, userID int64, voteType string) error {
 	_, err := r.db.Exec(`
 		INSERT INTO votes (entity_type, entity_id, user_id, vote_type, created_at, modified_at)
 		VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
@@ -114,12 +115,12 @@ func (r *Repository) AddVote(entityType string, entityID, userID int64, voteType
 	return err
 }
 
-func (r *Repository) RemoveVote(entityType string, entityID, userID int64) error {
+func (r *JokesRepository) RemoveVote(entityType string, entityID, userID int64) error {
 	_, err := r.db.Exec("DELETE FROM votes WHERE entity_type = ? AND entity_id = ? AND user_id = ?", entityType, entityID, userID)
 	return err
 }
 
-func (r *Repository) GetVote(entityType string, entityID, userID int64) (string, error) {
+func (r *JokesRepository) GetVote(entityType string, entityID, userID int64) (string, error) {
 	var voteType sql.NullString
 	err := r.db.QueryRow("SELECT vote_type FROM votes WHERE entity_type = ? AND entity_id = ? AND user_id = ?", entityType, entityID, userID).Scan(&voteType)
 	if err == sql.ErrNoRows {
@@ -128,7 +129,7 @@ func (r *Repository) GetVote(entityType string, entityID, userID int64) (string,
 	return voteType.String, err
 }
 
-func (r *Repository) AddReaction(entityType string, entityID, userID int64, reactionType string) error {
+func (r *JokesRepository) AddReaction(entityType string, entityID, userID int64, reactionType string) error {
 	_, err := r.db.Exec(`
 		INSERT INTO interactions (entity_type, entity_id, user_id, type, created_at, modified_at)
 		VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
@@ -137,24 +138,24 @@ func (r *Repository) AddReaction(entityType string, entityID, userID int64, reac
 	return err
 }
 
-func (r *Repository) RemoveReaction(entityType string, entityID, userID int64, reactionType string) error {
+func (r *JokesRepository) RemoveReaction(entityType string, entityID, userID int64, reactionType string) error {
 	_, err := r.db.Exec("DELETE FROM interactions WHERE entity_type = ? AND entity_id = ? AND user_id = ? AND type = ?", entityType, entityID, userID, reactionType)
 	return err
 }
 
-func (r *Repository) GetReaction(entityType string, entityID, userID int64, reactionType string) (bool, error) {
+func (r *JokesRepository) GetReaction(entityType string, entityID, userID int64, reactionType string) (bool, error) {
 	var count int
 	err := r.db.QueryRow("SELECT COUNT(*) FROM interactions WHERE entity_type = ? AND entity_id = ? AND user_id = ? AND type = ?", entityType, entityID, userID, reactionType).Scan(&count)
 	return count > 0, err
 }
 
-func (r *Repository) DeleteJoke(jokeID int64) error {
+func (r *JokesRepository) DeleteJoke(jokeID int64) error {
 	_, err := r.db.Exec("DELETE FROM jokes WHERE id = ?", jokeID)
 	return err
 }
 
-func (r *Repository) GetJokeByID(jokeID int64) (*Joke, error) {
-	var joke Joke
+func (r *JokesRepository) GetJokeByID(jokeID int64) (*models.Joke, error) {
+	var joke models.Joke
 	err := r.db.QueryRow("SELECT id, body, author_id, created_at, modified_at FROM jokes WHERE id = ?", jokeID).
 		Scan(&joke.ID, &joke.Body, &joke.AuthorID, &joke.CreatedAt, &joke.ModifiedAt)
 
@@ -167,7 +168,7 @@ func (r *Repository) GetJokeByID(jokeID int64) (*Joke, error) {
 	return &joke, nil
 }
 
-func (r *Repository) AddComment(jokeID, userID int64, body string) (int64, error) {
+func (r *JokesRepository) AddComment(jokeID, userID int64, body string) (int64, error) {
 	stmt, err := r.db.Prepare("INSERT INTO comments(joke_id, user_id, body, created_at) VALUES(?, ?, ?, datetime('now'))")
 	if err != nil {
 		return 0, fmt.Errorf("failed to prepare statement: %w", err)
@@ -187,7 +188,7 @@ func (r *Repository) AddComment(jokeID, userID int64, body string) (int64, error
 	return id, nil
 }
 
-func (r *Repository) GetComments(jokeID int64) ([]Comment, error) {
+func (r *JokesRepository) GetComments(jokeID int64) ([]models.Comment, error) {
 	rows, err := r.db.Query(`
 		SELECT c.id, c.joke_id, c.user_id, c.body, c.created_at, c.modified_at
 		FROM comments c
@@ -197,9 +198,9 @@ func (r *Repository) GetComments(jokeID int64) ([]Comment, error) {
 	}
 	defer rows.Close()
 
-	var comments []Comment
+	var comments []models.Comment
 	for rows.Next() {
-		var comment Comment
+		var comment models.Comment
 		if err := rows.Scan(&comment.ID, &comment.JokeID, &comment.UserID, &comment.Body, &comment.CreatedAt, &comment.ModifiedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}

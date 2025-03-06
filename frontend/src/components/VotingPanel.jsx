@@ -4,14 +4,17 @@ import { getCurrentUser } from "../api/authApi";
 
 const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
   const currentUser = getCurrentUser();
-  const userId = currentUser ? currentUser.userId : null;
   const isLoggedIn = !!currentUser;
 
   const [score, setScore] = useState(initialScore);
   const [hasVoted, setHasVoted] = useState(initialVote);
+  const [showEffect, setShowEffect] = useState(null);
 
   const handleVote = async (voteType) => {
     if (!isLoggedIn) return;
+
+    setShowEffect(voteType);
+    setTimeout(() => setShowEffect(null), 500); // Брызги исчезают через 0.5s
 
     setScore((prevScore) => {
       if (hasVoted === voteType) {
@@ -27,29 +30,33 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
   };
 
   return (
-    <div className="rating">
-      <button
-        className="upvote"
-        onClick={() => handleVote("plus")}
-        disabled={!isLoggedIn}
-        style={{
-          color: hasVoted === "plus" ? "green" : "#888",
-          cursor: isLoggedIn ? "pointer" : "not-allowed",
-        }}
-      >
-        ▲
+    <div className="voting-panel">
+      <button className={`voting-button upvote ${hasVoted === "plus" ? "active-upvote" : ""}`} onClick={() => handleVote("plus")} disabled={!isLoggedIn}>
+        <svg viewBox="0 0 24 24">
+          <polyline points="6 15 12 9 18 15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        {showEffect === "plus" && (
+          <div className="vote-splash-container">
+            {[...Array(6)].map((_, i) => (
+              <span key={i} className="vote-splash upvote-splash"></span>
+            ))}
+          </div>
+        )}
       </button>
-      <div className="score">{score}</div>
-      <button
-        className="downvote"
-        onClick={() => handleVote("minus")}
-        disabled={!isLoggedIn}
-        style={{
-          color: hasVoted === "minus" ? "red" : "#888",
-          cursor: isLoggedIn ? "pointer" : "not-allowed",
-        }}
-      >
-        ▼
+
+      <div className="voting-score">{score}</div>
+
+      <button className={`voting-button downvote ${hasVoted === "minus" ? "active-downvote" : ""}`} onClick={() => handleVote("minus")} disabled={!isLoggedIn}>
+        <svg viewBox="0 0 24 24">
+          <polyline points="6 9 12 15 18 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        {showEffect === "minus" && (
+          <div className="vote-splash-container">
+            {[...Array(6)].map((_, i) => (
+              <span key={i} className="vote-splash downvote-splash"></span>
+            ))}
+          </div>
+        )}
       </button>
     </div>
   );

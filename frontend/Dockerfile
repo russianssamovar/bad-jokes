@@ -1,19 +1,26 @@
-FROM node:18-alpine AS build
+# Этап сборки
+FROM node:18 AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install --frozen-lockfile
-
+COPY package.json ./
 COPY . .
+
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
+RUN npm install
+
+RUN echo "VITE_API_URL=${VITE_API_URL}"
 
 RUN npm run build
 
 FROM nginx:alpine
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-COPY --from=build /app/dist /usr/share/nginx/html
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
 
 EXPOSE 80
 

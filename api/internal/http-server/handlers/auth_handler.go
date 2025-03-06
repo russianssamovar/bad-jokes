@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"badJokes/internal/config"
-	"badJokes/internal/storage/sqlite/user"
+	"badJokes/internal/storage"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -11,11 +11,11 @@ import (
 )
 
 type AuthHandler struct {
-	repo      *user.Repository
+	repo      storage.UserRepository
 	jwtSecret []byte
 }
 
-func NewAuthHandler(repo *user.Repository, cfg *config.Config) *AuthHandler {
+func NewAuthHandler(repo storage.UserRepository, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		repo:      repo,
 		jwtSecret: []byte(cfg.JWTSecret),

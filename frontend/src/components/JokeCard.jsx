@@ -3,16 +3,14 @@ import { deleteJoke } from "../api/jokesApi";
 import { getCurrentUser } from "../api/authApi";
 import ReactionsList from "./ReactionsList";
 import VotingPanel from "./VotingPanel";
+import { Link } from "react-router-dom";
 
 const JokeCard = ({ joke, onDelete }) => {
   const currentUser = getCurrentUser();
-  const userId = currentUser ? currentUser.userId : null;
-  const isLoggedIn = !!currentUser;
-
-  const isAuthor = joke.author_id === userId;
+  const isAuthor = currentUser?.userId === joke.author_id;
 
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this joke?")) {
+    if (window.confirm("Удалить шутку?")) {
       await deleteJoke(joke.id);
       if (onDelete) onDelete(joke.id);
     }
@@ -20,26 +18,25 @@ const JokeCard = ({ joke, onDelete }) => {
 
   return (
     <div className="joke-card">
-      <VotingPanel
-        entityType="joke"
-        entityId={joke.id}
-        initialScore={joke.social.pluses - joke.social.minuses}
-        initialVote={joke.social.user?.vote_type || null}
-      />
+      {isAuthor && (
+        <button className="delete-button" onClick={handleDelete}>
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <line x1="4" y1="4" x2="20" y2="20" stroke="black" strokeWidth="2"/>
+            <line x1="20" y1="4" x2="4" y2="20" stroke="black" strokeWidth="2"/>
+          </svg>
+        </button>
+      )}
 
-      <div className="joke-content">
-        <p>{joke.body}</p>
+      {/* Тело шутки */}
+      <p className="joke-text">{joke.body}</p>
 
-        <ReactionsList
-          jokeId={joke.id}
-          initialReactions={joke.social.reactions}
-          initialUserReactions={joke.social.user?.reactions || []}
-          isLoggedIn={isLoggedIn}
-        />
-
-        <div className="comment-count">💬 {joke.comment_count} comments</div>
-
-        {isAuthor && <button className="delete-button" onClick={handleDelete}>🗑️</button>}
+      <ReactionsList jokeId={joke.id} initialReactions={joke.social.reactions} initialUserReactions={joke.social?.user?.reactions} isLoggedIn={!!currentUser}/>
+      
+      <div className="bottom-panel">
+          <Link to={`/joke/${joke.id}`} className="comment-count">
+            💬 {joke.comment_count} comments
+          </Link>
+        <VotingPanel entityType="joke" entityId={joke.id} initialScore={joke.social.pluses - joke.social.minuses} initialVote={joke.social?.user?.vote_type}/>
       </div>
     </div>
   );
