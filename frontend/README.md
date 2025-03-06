@@ -1,8 +1,33 @@
-# React + Vite
+# React + Go Web Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+This is a full-stack web application featuring a React frontend built with Vite and a Go backend. The project uses SQL for database management and npm for frontend package management.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Technologies
+
+### Frontend
+- React
+- Vite
+- JavaScript/TypeScript
+- npm
+
+### Backend
+- Go
+
+### Database
+- PostgreSQL
+
+## Getting Started
+
+### Prerequisites
+- Node.js and npm
+- Go 1.18+
+- PostgreSQL 
+
+### Installation
+
+1. Clone the repository
+   ```sh
+   git clone https://github.com/alekseev3/project-name.git
+   cd project-name
