@@ -1,6 +1,32 @@
 /* --- ГЛОБАЛЬНЫЕ СТИЛИ --- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+:root {
+  /* Primary Colors */
+  --primary: #2ecc71;
+  --primary-hover: #27ae60;
+  --primary-light: rgba(46, 204, 113, 0.1);
+  --primary-disabled: #a1e2b9;
+
+  /* Neutrals */
+  --background: #f0f2f5;
+  --card-bg: #ffffff;
+  --border: #e1e1e1;
+  --input-bg: #f7f9fc;
+
+  /* Typography */
+  --text-dark: #333;
+  --text-medium: #666;
+  --text-light: #aaa;
+
+  /* Feedback */
+  --error: #e74c3c;
+  --error-bg: #fdeded;
+
+  /* Current accent colors from other components */
+  --accent-blue: #d1e7fd;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -9,7 +35,7 @@
 }
 
 body {
-  background-color: #f0f2f5;
+  background-color: var(--background);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -19,8 +45,8 @@ body {
 
 /* --- КАРТОЧКА ШУТКИ --- */
 .joke-card {
-  background: #ffffff;
-  border: 1px solid #ddd;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 15px;
@@ -50,7 +76,7 @@ body {
 .joke-text {
   font-size: 16px;
   line-height: 1.5;
-  color: #333;
+  color: var(--text-dark);
   margin-bottom: 20px;
 }
 
@@ -72,32 +98,13 @@ body {
 /* --- КНОПКА КОММЕНТАРИЕВ --- */
 .comment-count {
   font-size: 14px;
-  color: #666;
+  color: var(--text-medium);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .comment-count:hover {
-  color: black;
-}
-
-/* Если нет места внизу, показываем сверху */
-@media (max-height: 500px) {
-  .reaction-popup {
-    bottom: auto;
-    top: 45px;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  color: var(--text-dark);
 }
 
 .reaction-option {
@@ -113,7 +120,7 @@ body {
 }
 
 .reaction-option:hover {
-  background: #f0f2f5;
+  background: var(--background);
 }
 
 /* --- АДАПТИВНОСТЬ (МОБИЛЬНЫЕ УСТРОЙСТВА) --- */
@@ -164,24 +171,24 @@ body {
 .voting-button svg {
   width: 24px;
   height: 24px;
-  stroke: gray;
+  stroke: var(--text-light);
   fill: none;
   transition: stroke 0.2s ease-in-out;
 }
 
 /* --- Обычный ховер --- */
 .voting-button:hover svg {
-  stroke: black;
+  stroke: var(--text-dark);
 }
 
 /* --- Выбранная стрелка вверх (зелёная) --- */
 .active-upvote svg {
-  stroke: #2ecc71; /* Ярко-зелёный */
+  stroke: var(--primary);
 }
 
 /* --- Выбранная стрелка вниз (красная) --- */
 .active-downvote svg {
-  stroke: #e74c3c; /* Красноватый */
+  stroke: var(--error);
 }
 
 /* --- Контейнер для брызг --- */
@@ -207,15 +214,15 @@ body {
 
 /* --- Брызги вверх (зелёные) --- */
 .upvote-splash {
-  background-color: #2ecc71;
-  box-shadow: 0 0 5px #2ecc71;
-  transform: translate(-5px, -10px); /* Чуть левее и выше */
+  background-color: var(--primary);
+  box-shadow: 0 0 5px var(--primary);
+  transform: translate(-5px, -10px);
 }
 
 /* --- Брызги вниз (красные) --- */
 .downvote-splash {
-  background-color: #e74c3c;
-  box-shadow: 0 0 5px #e74c3c;
+  background-color: var(--error);
+  box-shadow: 0 0 5px var(--error);
 }
 
 /* --- Анимация разлета брызг конусом --- */
@@ -245,6 +252,7 @@ body {
 .downvote-splash:nth-child(4) { --x: -15px; --y: 10px; }
 .downvote-splash:nth-child(5) { --x: 15px; --y: 10px; }
 .downvote-splash:nth-child(6) { --x: 0px; --y: 15px; }
+
 /* --- Фон под блоком реакций --- */
 .reactions-wrapper {
   border-radius: 10px;
@@ -263,7 +271,7 @@ body {
 .reaction {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: var(--card-bg);
   padding: 6px 10px;
   border-radius: 20px;
   font-size: 16px;
@@ -274,27 +282,27 @@ body {
 
 /* --- Подсветка активной реакции пользователя --- */
 .reaction.active {
-  background: #d1e7fd;
+  background: var(--accent-blue);
   font-weight: bold;
 }
 
 /* --- Кнопка "+" для выбора реакции --- */
 .add-reaction {
-  background: #ffffff;
-  border: 1px solid #ccc;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 50%;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .add-reaction:hover {
-  background: #f0f2f5;
+  background: var(--background);
 }
 
 /* --- Всплывающее меню реакций --- */
 .reaction-popup {
   position: absolute;
-  background: white;
+  background: var(--card-bg);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   padding: 12px;
@@ -307,7 +315,7 @@ body {
 
 /* --- Подсветка реакций в меню, если пользователь уже нажал --- */
 .reaction-option.active {
-  background: #d1e7fd;
+  background: var(--accent-blue);
   font-weight: bold;
 }
 
@@ -322,7 +330,6 @@ body {
     transform: translateY(0);
   }
 }
-
 
 /* --- АНИМАЦИЯ БРЫЗГ ПРИ НАЖАТИИ НА РЕАКЦИЮ --- */
 .reaction-splash-container {
@@ -368,4 +375,341 @@ body {
 @keyframes reactionRemovalEffect {
   0% { opacity: 0.6; transform: translate(var(--x), var(--y)) scale(1) rotate(var(--rotate)); }
   100% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+}
+
+/* Auth page styles */
+.auth-container {
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.auth-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  width: 480px;
+  max-width: 500px;
+  overflow: hidden;
+  padding: 30px;
+  transition: all 0.3s ease;
+}
+
+.auth-card:hover {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-header h1 {
+  font-size: 28px;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.auth-header p {
+  color: var(--text-medium);
+  font-size: 16px;
+}
+
+.auth-tabs {
+  display: flex;
+  position: relative;
+  margin-bottom: 30px;
+  border-bottom: 2px solid var(--border);
+}
+
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 15px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-medium);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.auth-tab.active {
+  color: var(--primary);
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: -2px;
+  height: 2px;
+  width: 50%;
+  background: var(--primary);
+  transition: left 0.3s ease;
+}
+
+.forms-container {
+  position: relative;
+  overflow: hidden;
+  height: auto;
+}
+
+.form-section {
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition: all 0.3s ease;
+  transform: translateX(40px);
+}
+
+.form-section.active {
+  opacity: 1;
+  visibility: visible;
+  position: relative;
+  transform: translateX(0);
+}
+
+/* Fancy input groups */
+.input-group {
+  position: relative;
+  margin-bottom: 24px;
+  margin-top: 10px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 16px;
+  color: var(--text-dark);
+  background: var(--input-bg);
+  transition: all 0.2s ease;
+}
+
+.input-group label {
+  position: absolute;
+  left: 15px;
+  top: 13px;
+  color: var(--text-light);
+  font-size: 16px;
+  pointer-events: none;
+  transition: 0.2s ease all;
+}
+
+.input-group input:focus,
+.input-group input:not(:placeholder-shown) {
+  border-color: var(--primary);
+  background: var(--card-bg);
+  box-shadow: 0 0 0 4px var(--primary-light);
+  outline: none;
+}
+
+.input-group input:focus ~ label,
+.input-group input:not(:placeholder-shown) ~ label {
+  top: -10px;
+  left: 10px;
+  font-size: 12px;
+  color: var(--primary);
+  background: var(--card-bg);
+  padding: 0 5px;
+  z-index: 1;
+}
+
+.input-group input::placeholder {
+  color: transparent;
+}
+
+.input-icon {
+  position: absolute;
+  right: 15px;
+  top: 13px;
+  font-style: normal;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  color: var(--card-bg);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.auth-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(46, 204, 113, 0.2);
+}
+
+.auth-button:disabled {
+  background: var(--primary-disabled);
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: var(--error-bg);
+  border-radius: 8px;
+  color: var(--error);
+  padding: 12px;
+  margin-top: 20px;
+  font-size: 14px;
+  text-align: center;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .auth-header h1 {
+    font-size: 24px;
+  }
+}
+
+/* Fix for edge cases in mobile */
+@media (max-height: 500px) {
+  .reaction-popup {
+    bottom: auto;
+    top: 45px;
+  }
+}
+
+/* Header styles */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--card-bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-link {
+  text-decoration: none;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.username {
+  color: var(--text-dark);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.header-button {
+  background: var(--primary);
+  color: var(--card-bg);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.header-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(46, 204, 113, 0.2);
+}
+
+@media (max-width: 768px) {
+  .username {
+    display: none;
+  }
+
+  .user-info {
+    gap: 8px;
+  }
+
+  .header-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 0 12px;
+    height: 60px;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-svg {
+  height: 35px;
+}
+
+@media (max-width: 480px) {
+  .logo-svg {
+    height: 28px;
+    width: 96px;
+  }
 }
