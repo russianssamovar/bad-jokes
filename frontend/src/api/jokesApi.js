@@ -63,3 +63,13 @@ export const fetchComments = async (jokeId) => {
   });
   return response.data;
 };
+
+export const fetchJokeWithComments = async (jokeId) => {
+  try {
+    const response = await apiClient.get(`/${jokeId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching joke with comments:", error);
+    throw error;
+  }
+};

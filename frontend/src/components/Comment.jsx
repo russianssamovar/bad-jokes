@@ -1,0 +1,100 @@
+import React, { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { deleteComment } from "../api/commentsApi";
+import { getCurrentUser } from "../api/authApi";
+import VotingPanel from "./VotingPanel";
+import ReactionsList from "./ReactionsList";
+import CommentForm from "./CommentForm";
+
+const Comment = ({ comment, onCommentDeleted }) => {
+    const [showReplyForm, setShowReplyForm] = useState(false);
+    const currentUser = getCurrentUser();
+    const isAuthor = currentUser?.userId === comment.author_id;
+
+    const handleDelete = async () => {
+        if (window.confirm("Delete this comment?")) {
+            try {
+                await deleteComment(comment.id);
+                onCommentDeleted(comment.id);
+            } catch (error) {
+                console.error("Failed to delete comment:", error);
+            }
+        }
+    };
+
+    const toggleReplyForm = () => {
+        setShowReplyForm(!showReplyForm);
+    };
+
+    return (
+        <div className="comment">
+            <div className="comment-header">
+                <span className="comment-author">{comment.author_username}</span>
+                <span className="comment-time">
+          {formatDistanceToNow(new Date(comment.created_at))} ago
+        </span>
+            </div>
+
+            <div
+                className="comment-body rich-content"
+                dangerouslySetInnerHTML={{ __html: comment.body }}
+            />
+
+            <div className="comment-actions">
+                <ReactionsList
+                    entityType="comment"
+                    entityId={comment.id}
+                    initialReactions={comment.social.reactions}
+                    initialUserReactions={comment.social?.user?.reactions}
+                    isLoggedIn={!!currentUser}
+                />
+
+                <div className="comment-buttons">
+                    {currentUser && (
+                        <button className="reply-button" onClick={toggleReplyForm}>
+                            Reply
+                        </button>
+                    )}
+
+                    {isAuthor && (
+                        <button className="delete-button" onClick={handleDelete}>
+                            Delete
+                        </button>
+                    )}
+                </div>
+
+                <VotingPanel
+                    entityType="comment"
+                    entityId={comment.id}
+                    initialScore={comment.social.pluses}
+                    initialVote={comment.social?.user?.vote_type}
+                />
+            </div>
+
+            {showReplyForm && currentUser && (
+                <div className="reply-form-container">
+                    <CommentForm
+                        jokeId={comment.joke_id}
+                        parentId={comment.id}
+                        onCommentAdded={() => setShowReplyForm(false)}
+                        isReply
+                    />
+                </div>
+            )}
+
+            {comment.children && comment.children.length > 0 && (
+                <div className="nested-comments">
+                    {comment.children.map(childComment => (
+                        <Comment
+                            key={childComment.id}
+                            comment={childComment}
+                            onCommentDeleted={onCommentDeleted}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default Comment;

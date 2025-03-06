@@ -956,3 +956,149 @@ body {
     justify-content: center;
   }
 }
+
+/* Add to your styles.css */
+.joke-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 20px;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.joke-section {
+  margin-bottom: 30px;
+}
+
+.comments-section {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.comments-header {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.comment {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: var(--card-bg);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.comment-time {
+  font-size: 12px;
+  color: var(--text-medium);
+}
+
+.comment-body {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.comment-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.reply-button, .delete-button {
+  background: none;
+  border: none;
+  color: var(--text-medium);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.reply-button:hover, .delete-button:hover {
+  color: var(--primary);
+}
+
+.delete-button:hover {
+  color: var(--danger);
+}
+
+.nested-comments {
+  margin-left: 20px;
+  margin-top: 15px;
+  border-left: 2px solid var(--border);
+  padding-left: 15px;
+}
+
+.comment-form {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.comment-form h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.reply-form {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  background: var(--background);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cancel-button {
+  background: var(--text-light);
+  color: var(--text-medium);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.no-comments {
+  text-align: center;
+  color: var(--text-medium);
+  padding: 20px 0;
+  font-style: italic;
+}

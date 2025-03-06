@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Header from "./components/Header";
 import CreateJoke from "./components/CreateJoke";
+import JokeDetail from './pages/JokeDetail';
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ const App = () => (
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/create" element={<CreateJoke />} />
+        <Route path="/joke/:jokeId" element={<JokeDetail />} />
       </Routes>
     </Router>
   </QueryClientProvider>

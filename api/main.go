@@ -6,11 +6,13 @@ import (
 	"badJokes/internal/http-server/middleware"
 	"badJokes/internal/lib/sl"
 	"badJokes/internal/storage"
+	"context"
 	"database/sql"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -58,6 +60,7 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
 
+	// Jokes list and create
 	mux.Handle("/api/jokes", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -69,10 +72,53 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 		}
 	})))
 
+	// Joke interactions
 	mux.Handle("/api/jokes/vote", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.VoteEntity)))
 	mux.Handle("/api/jokes/react", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
 	mux.Handle("/api/jokes/delete", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.DeleteJoke)))
 
+	// Single joke with comments
+	mux.Handle("/api/jokes/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		pathSegments := strings.Split(strings.TrimPrefix(path, "/api/jokes/"), "/")
+
+		if len(pathSegments) == 0 || pathSegments[0] == "" {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+
+		jokeID := pathSegments[0]
+
+		// Handle /api/jokes/{id}
+		if len(pathSegments) == 1 {
+			r = r.WithContext(context.WithValue(r.Context(), "jokeId", jokeID))
+
+			switch r.Method {
+			case http.MethodGet:
+				authMiddleware.Middleware(http.HandlerFunc(jokesHandler.GetJokeWithComments)).ServeHTTP(w, r)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		// Handle /api/jokes/{id}/comments
+		if len(pathSegments) == 2 && pathSegments[1] == "comments" {
+			r = r.WithContext(context.WithValue(r.Context(), "jokeId", jokeID))
+
+			switch r.Method {
+			case http.MethodPost:
+				authMiddleware.Middleware(http.HandlerFunc(jokesHandler.AddComment)).ServeHTTP(w, r)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		http.Error(w, "Not found", http.StatusNotFound)
+	}))
+
+	// Comments list and create
 	mux.Handle("/api/comments", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -84,8 +130,30 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 		}
 	})))
 
+	// Comment operations
 	mux.Handle("/api/comments/vote", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.VoteEntity)))
 	mux.Handle("/api/comments/react", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
+
+	// Comment deletion
+	mux.Handle("/api/comments/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		pathSegments := strings.Split(strings.TrimPrefix(path, "/api/comments/"), "/")
+
+		if len(pathSegments) != 1 || pathSegments[0] == "" {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+
+		commentID := pathSegments[0]
+		r = r.WithContext(context.WithValue(r.Context(), "commentId", commentID))
+
+		switch r.Method {
+		case http.MethodDelete:
+			authMiddleware.Middleware(http.HandlerFunc(jokesHandler.DeleteComment)).ServeHTTP(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
