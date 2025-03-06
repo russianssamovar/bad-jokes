@@ -7,24 +7,34 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
   const isLoggedIn = !!currentUser;
 
   const [score, setScore] = useState(initialScore);
-  const [hasVoted, setHasVoted] = useState(initialVote);
+  const [hasVoted, setHasVoted] = useState(initialVote || null);
   const [showEffect, setShowEffect] = useState(null);
 
   const handleVote = async (voteType) => {
     if (!isLoggedIn) return;
 
     setShowEffect(voteType);
-    setTimeout(() => setShowEffect(null), 500); // Брызги исчезают через 0.5s
+    setTimeout(() => setShowEffect(null), 500);
 
-    setScore((prevScore) => {
-      if (hasVoted === voteType) {
-        setHasVoted(null);
-        return prevScore + (voteType === "plus" ? -1 : 1);
-      } else {
-        setHasVoted(voteType);
-        return prevScore + (voteType === "plus" ? 1 : -1) * (hasVoted ? 2 : 1);
-      }
-    });
+    const currentVote = hasVoted;
+    const currentScore = score;
+
+    let newVote;
+    let newScore;
+
+    if (currentVote === voteType) {
+      newVote = null;
+      newScore = currentScore + (voteType === "plus" ? -1 : 1);
+    } else if (currentVote === null) {
+      newVote = voteType;
+      newScore = currentScore + (voteType === "plus" ? 1 : -1);
+    } else {
+      newVote = voteType;
+      newScore = currentScore + (voteType === "plus" ? 2 : -2);
+    }
+
+    setHasVoted(newVote);
+    setScore(newScore);
 
     await voteEntity(entityType, entityId, voteType);
   };
