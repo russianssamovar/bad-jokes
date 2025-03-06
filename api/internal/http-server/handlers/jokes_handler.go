@@ -17,30 +17,47 @@ func NewJokesHandler(repo storage.JokesRepository) *JokesHandler {
 }
 
 func (h *JokesHandler) ListJokes(w http.ResponseWriter, r *http.Request) {
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	if err != nil || pageSize < 1 {
-		pageSize = 10
-	}
-	sortField := r.URL.Query().Get("sortField")
-	order := r.URL.Query().Get("order")
+    page, err := strconv.Atoi(r.URL.Query().Get("page"))
+    if err != nil || page < 1 {
+        page = 1
+    }
+    
+    pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+    if err != nil || pageSize < 1 || pageSize > 100 {
+        pageSize = 10
+    }
+    
+    sortField := r.URL.Query().Get("sortField")
+    allowedSortFields := map[string]bool{
+        "created_at": true,
+        "modified_at": true,
+        "id": true,
+        "score": true,
+        "reactions_count": true,
+    }
+    
+    if !allowedSortFields[sortField] {
+        sortField = "created_at"
+    }
+    
+    order := r.URL.Query().Get("order")
+    if order != "asc" && order != "desc" {
+        order = "desc"
+    }
+    
+    var currentUserID int64
+    if userID, ok := r.Context().Value(middleware.UserIDKey).(int64); ok {
+        currentUserID = userID
+    }
 
-	var currentUserID int64
-	if userID, ok := r.Context().Value(middleware.UserIDKey).(int64); ok {
-		currentUserID = userID
-	}
+    jokesList, err := h.repo.ListPage(page, pageSize, sortField, order, currentUserID)
+    if err != nil {
+        http.Error(w, "Failed to fetch jokes", http.StatusInternalServerError)
+        return
+    }
 
-	jokesList, err := h.repo.ListPage(page, pageSize, sortField, order, currentUserID)
-	if err != nil {
-		http.Error(w, "Failed to fetch jokes", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(jokesList)
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(jokesList)
 }
 
 func (h *JokesHandler) CreateJoke(w http.ResponseWriter, r *http.Request) {
