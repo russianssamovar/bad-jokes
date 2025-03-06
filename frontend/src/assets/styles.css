@@ -43,7 +43,7 @@ body {
   padding-top: 80px;
 }
 
-/* --- КАРТОЧКА ШУТКИ --- */
+/* --- КАРТОЧКА ШУТКИ И КОНТЕНТ --- */
 .joke-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -54,33 +54,43 @@ body {
   position: relative;
   width: 700px;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- КНОПКА УДАЛЕНИЯ (КРЕСТИК) --- */
+.joke-content-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.joke-text {
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  margin: 0;
+}
+
 .delete-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   background: none;
   border: none;
   cursor: pointer;
   padding: 5px;
-  transition: transform 0.2s ease-in-out;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .delete-button:hover {
-  transform: rotate(90deg);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* --- ТЕКСТ ШУТКИ --- */
-.joke-text {
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--text-dark);
-  margin-bottom: 20px;
-}
-
-/* --- НИЖНЯЯ ПАНЕЛЬ (РЕАКЦИИ + ГОЛОСОВАНИЕ + КОММЕНТЫ) --- */
+/* --- НИЖНЯЯ ПАНЕЛЬ И КОНТЕЙНЕРЫ --- */
 .bottom-panel {
   display: flex;
   justify-content: space-between;
@@ -88,14 +98,12 @@ body {
   margin-top: 10px;
 }
 
-/* --- ГОЛОСОВАНИЕ (ПРАВЫЙ НИЖНИЙ УГОЛ) --- */
 .vote-comment-container {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* --- КНОПКА КОММЕНТАРИЕВ --- */
 .comment-count {
   font-size: 14px;
   color: var(--text-medium);
@@ -105,6 +113,136 @@ body {
 
 .comment-count:hover {
   color: var(--text-dark);
+}
+
+/* --- КОМПОНЕНТЫ ГОЛОСОВАНИЯ --- */
+.voting-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.voting-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s ease-in-out;
+  position: relative;
+  overflow: visible;
+}
+
+.voting-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.voting-button svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--text-light);
+  fill: none;
+  transition: stroke 0.2s ease-in-out;
+}
+
+.voting-button:hover svg {
+  stroke: var(--text-dark);
+}
+
+.active-upvote svg {
+  stroke: var(--primary);
+}
+
+.active-downvote svg {
+  stroke: var(--error);
+}
+
+/* --- АНИМАЦИЯ ГОЛОСОВАНИЯ --- */
+.vote-splash-container {
+  position: absolute;
+  top: 50%;
+  left: 43%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.vote-splash {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: splashEffect 0.5s ease-out forwards;
+}
+
+.upvote-splash {
+  background-color: var(--primary);
+  box-shadow: 0 0 5px var(--primary);
+  transform: translate(-5px, -10px);
+}
+
+.downvote-splash {
+  background-color: var(--error);
+  box-shadow: 0 0 5px var(--error);
+}
+
+.upvote-splash:nth-child(1) { --x: -12px; --y: -22px; }
+.upvote-splash:nth-child(2) { --x: -2px; --y: -28px; }
+.upvote-splash:nth-child(3) { --x: 8px; --y: -22px; }
+.upvote-splash:nth-child(4) { --x: -17px; --y: -12px; }
+.upvote-splash:nth-child(5) { --x: 13px; --y: -12px; }
+.upvote-splash:nth-child(6) { --x: -2px; --y: -17px; }
+
+.downvote-splash:nth-child(1) { --x: -10px; --y: 20px; }
+.downvote-splash:nth-child(2) { --x: 0px; --y: 25px; }
+.downvote-splash:nth-child(3) { --x: 10px; --y: 20px; }
+.downvote-splash:nth-child(4) { --x: -15px; --y: 10px; }
+.downvote-splash:nth-child(5) { --x: 15px; --y: 10px; }
+.downvote-splash:nth-child(6) { --x: 0px; --y: 15px; }
+
+/* --- СТИЛИ РЕАКЦИЙ --- */
+.reactions-wrapper {
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.reaction {
+  display: flex;
+  align-items: center;
+  background: var(--card-bg);
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  gap: 4px;
+}
+
+.reaction.active {
+  background: var(--accent-blue);
+  font-weight: bold;
+}
+
+.add-reaction {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-reaction:hover {
+  background: var(--background);
 }
 
 .reaction-option {
@@ -123,183 +261,12 @@ body {
   background: var(--background);
 }
 
-/* --- АДАПТИВНОСТЬ (МОБИЛЬНЫЕ УСТРОЙСТВА) --- */
-@media (max-width: 768px) {
-  .joke-card {
-    width: 100%;
-  }
-
-  .vote-comment-container {
-    flex-direction: row;
-    justify-content: flex-end;
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-  }
-
-  .reaction-popup {
-    grid-template-columns: repeat(3, 45px);
-  }
-}
-
-/* --- Горизонтальное голосование --- */
-.voting-panel {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-}
-
-/* --- Кнопки голосования --- */
-.voting-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  transition: transform 0.2s ease-in-out;
-  position: relative;
-  overflow: visible;
-}
-
-/* --- Деактивированные кнопки --- */
-.voting-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* --- SVG стрелки голосования --- */
-.voting-button svg {
-  width: 24px;
-  height: 24px;
-  stroke: var(--text-light);
-  fill: none;
-  transition: stroke 0.2s ease-in-out;
-}
-
-/* --- Обычный ховер --- */
-.voting-button:hover svg {
-  stroke: var(--text-dark);
-}
-
-/* --- Выбранная стрелка вверх (зелёная) --- */
-.active-upvote svg {
-  stroke: var(--primary);
-}
-
-/* --- Выбранная стрелка вниз (красная) --- */
-.active-downvote svg {
-  stroke: var(--error);
-}
-
-/* --- Контейнер для брызг --- */
-.vote-splash-container {
-  position: absolute;
-  top: 50%;
-  left: 43%;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-}
-
-/* --- Брызги --- */
-.vote-splash {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  opacity: 0;
-  animation: splashEffect 0.5s ease-out forwards;
-}
-
-/* --- Брызги вверх (зелёные) --- */
-.upvote-splash {
-  background-color: var(--primary);
-  box-shadow: 0 0 5px var(--primary);
-  transform: translate(-5px, -10px);
-}
-
-/* --- Брызги вниз (красные) --- */
-.downvote-splash {
-  background-color: var(--error);
-  box-shadow: 0 0 5px var(--error);
-}
-
-/* --- Анимация разлета брызг конусом --- */
-@keyframes splashEffect {
-  0% {
-    opacity: 1;
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--x), var(--y)) scale(1.5);
-  }
-}
-
-/* --- Подкорректированные углы разлёта брызг вверх --- */
-.upvote-splash:nth-child(1) { --x: -12px; --y: -22px; }
-.upvote-splash:nth-child(2) { --x: -2px; --y: -28px; }
-.upvote-splash:nth-child(3) { --x: 8px; --y: -22px; }
-.upvote-splash:nth-child(4) { --x: -17px; --y: -12px; }
-.upvote-splash:nth-child(5) { --x: 13px; --y: -12px; }
-.upvote-splash:nth-child(6) { --x: -2px; --y: -17px; }
-
-/* --- Для downvote (разлёт вниз, без изменений) --- */
-.downvote-splash:nth-child(1) { --x: -10px; --y: 20px; }
-.downvote-splash:nth-child(2) { --x: 0px; --y: 25px; }
-.downvote-splash:nth-child(3) { --x: 10px; --y: 20px; }
-.downvote-splash:nth-child(4) { --x: -15px; --y: 10px; }
-.downvote-splash:nth-child(5) { --x: 15px; --y: 10px; }
-.downvote-splash:nth-child(6) { --x: 0px; --y: 15px; }
-
-/* --- Фон под блоком реакций --- */
-.reactions-wrapper {
-  border-radius: 10px;
-  display: inline-block;
-}
-
-/* --- Обычные реакции --- */
-.reactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-/* --- Отображение реакций --- */
-.reaction {
-  display: flex;
-  align-items: center;
-  background: var(--card-bg);
-  padding: 6px 10px;
-  border-radius: 20px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-  gap: 4px;
-}
-
-/* --- Подсветка активной реакции пользователя --- */
-.reaction.active {
+.reaction-option.active {
   background: var(--accent-blue);
   font-weight: bold;
 }
 
-/* --- Кнопка "+" для выбора реакции --- */
-.add-reaction {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.add-reaction:hover {
-  background: var(--background);
-}
-
-/* --- Всплывающее меню реакций --- */
+/* --- ВСПЛЫВАЮЩИЕ ЭЛЕМЕНТЫ --- */
 .reaction-popup {
   position: absolute;
   background: var(--card-bg);
@@ -313,25 +280,7 @@ body {
   animation: fadeIn 0.2s ease-in-out;
 }
 
-/* --- Подсветка реакций в меню, если пользователь уже нажал --- */
-.reaction-option.active {
-  background: var(--accent-blue);
-  font-weight: bold;
-}
-
-/* --- Анимация появления меню --- */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* --- АНИМАЦИЯ БРЫЗГ ПРИ НАЖАТИИ НА РЕАКЦИЮ --- */
+/* --- АНИМАЦИЯ РЕАКЦИЙ --- */
 .reaction-splash-container {
   z-index: 1000;
 }
@@ -343,7 +292,43 @@ body {
   animation: reactionSplashEffect 0.6s ease-out forwards;
 }
 
-/* --- Анимация разлёта реакций --- */
+.reaction-splash.removal {
+  opacity: 0.6;
+  animation: reactionRemovalEffect 0.6s ease-in forwards;
+}
+
+.reaction-splash:nth-child(1) { --x: -40px; --y: -50px; --rotate: -20deg; }
+.reaction-splash:nth-child(2) { --x: 0px; --y: -60px; --rotate: 15deg; }
+.reaction-splash:nth-child(3) { --x: 40px; --y: -50px; --rotate: -10deg; }
+.reaction-splash:nth-child(4) { --x: -45px; --y: -30px; --rotate: 25deg; }
+.reaction-splash:nth-child(5) { --x: 45px; --y: -30px; --rotate: -25deg; }
+.reaction-splash:nth-child(6) { --x: -30px; --y: -40px; --rotate: 10deg; }
+.reaction-splash:nth-child(7) { --x: 30px; --y: -40px; --rotate: -15deg; }
+.reaction-splash:nth-child(8) { --x: 0px; --y: -45px; --rotate: 20deg; }
+
+/* --- KEYFRAMES АНИМАЦИЙ --- */
+@keyframes splashEffect {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) scale(1.5);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes reactionSplashEffect {
   0% {
     opacity: 1;
@@ -355,29 +340,18 @@ body {
   }
 }
 
-/* --- Анимация втягивания при удалении реакции --- */
-.reaction-splash.removal {
-  opacity: 0.6;
-  animation: reactionRemovalEffect 0.6s ease-in forwards;
-}
-
-/* --- Углы разлёта (расширено) --- */
-.reaction-splash:nth-child(1) { --x: -40px; --y: -50px; --rotate: -20deg; }
-.reaction-splash:nth-child(2) { --x: 0px; --y: -60px; --rotate: 15deg; }
-.reaction-splash:nth-child(3) { --x: 40px; --y: -50px; --rotate: -10deg; }
-.reaction-splash:nth-child(4) { --x: -45px; --y: -30px; --rotate: 25deg; }
-.reaction-splash:nth-child(5) { --x: 45px; --y: -30px; --rotate: -25deg; }
-.reaction-splash:nth-child(6) { --x: -30px; --y: -40px; --rotate: 10deg; }
-.reaction-splash:nth-child(7) { --x: 30px; --y: -40px; --rotate: -15deg; }
-.reaction-splash:nth-child(8) { --x: 0px; --y: -45px; --rotate: 20deg; }
-
-/* --- Анимация втягивания (удаление реакции) --- */
 @keyframes reactionRemovalEffect {
   0% { opacity: 0.6; transform: translate(var(--x), var(--y)) scale(1) rotate(var(--rotate)); }
   100% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); }
 }
 
-/* Auth page styles */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+/* --- AUTH PAGE STYLES --- */
 .auth-container {
   align-items: center;
   min-height: 100vh;
@@ -472,7 +446,7 @@ body {
   transform: translateX(0);
 }
 
-/* Fancy input groups */
+/* --- ФОРМЫ И ИНПУТЫ --- */
 .input-group {
   position: relative;
   margin-bottom: 24px;
@@ -530,6 +504,7 @@ body {
   font-style: normal;
 }
 
+/* --- КНОПКИ --- */
 .auth-button {
   width: 100%;
   padding: 14px;
@@ -555,6 +530,27 @@ body {
   cursor: not-allowed;
 }
 
+.header-button {
+  background: var(--primary);
+  color: var(--card-bg);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.header-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(46, 204, 113, 0.2);
+}
+
+/* --- СООБЩЕНИЯ ОШИБОК --- */
 .error-message {
   background: var(--error-bg);
   border-radius: 8px;
@@ -566,31 +562,7 @@ body {
   animation: shake 0.5s ease;
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-5px); }
-  40%, 80% { transform: translateX(5px); }
-}
-
-@media (max-width: 480px) {
-  .auth-card {
-    padding: 20px;
-  }
-
-  .auth-header h1 {
-    font-size: 24px;
-  }
-}
-
-/* Fix for edge cases in mobile */
-@media (max-height: 500px) {
-  .reaction-popup {
-    bottom: auto;
-    top: 45px;
-  }
-}
-
-/* Header styles */
+/* --- HEADER STYLES --- */
 .header {
   position: fixed;
   top: 0;
@@ -611,6 +583,11 @@ body {
   justify-content: space-between;
 }
 
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
 .logo-link {
   text-decoration: none;
 }
@@ -622,6 +599,11 @@ body {
   margin: 0;
 }
 
+.logo-svg {
+  height: 35px;
+}
+
+/* --- ПОЛЬЗОВАТЕЛЬСКИЙ ИНТЕРФЕЙС --- */
 .header-actions {
   display: flex;
   align-items: center;
@@ -652,27 +634,24 @@ body {
   font-size: 15px;
 }
 
-.header-button {
-  background: var(--primary);
-  color: var(--card-bg);
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.header-button:hover {
-  background: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(46, 204, 113, 0.2);
-}
-
+/* --- RESPONSIVE STYLES --- */
 @media (max-width: 768px) {
+  .joke-card {
+    width: 100%;
+  }
+
+  .vote-comment-container {
+    flex-direction: row;
+    justify-content: flex-end;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .reaction-popup {
+    grid-template-columns: repeat(3, 45px);
+  }
+
   .username {
     display: none;
   }
@@ -688,6 +667,14 @@ body {
 }
 
 @media (max-width: 480px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .auth-header h1 {
+    font-size: 24px;
+  }
+
   .header-container {
     padding: 0 12px;
     height: 60px;
@@ -696,20 +683,168 @@ body {
   .logo {
     font-size: 20px;
   }
-}
 
-.logo-container {
-  display: flex;
-  align-items: center;
-}
-
-.logo-svg {
-  height: 35px;
-}
-
-@media (max-width: 480px) {
   .logo-svg {
     height: 28px;
     width: 96px;
   }
+}
+
+/* --- FIX FOR SPECIAL CASES --- */
+@media (max-height: 500px) {
+  .reaction-popup {
+    bottom: auto;
+    top: 45px;
+  }
+}
+
+/* --- CREATE JOKE STYLES --- */
+.create-joke-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.create-joke-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.create-joke-card h2 {
+  color: var(--text-dark);
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.editor-container {
+  margin-bottom: 20px;
+}
+
+.editor-container .ql-container {
+  border-radius: 0 0 8px 8px;
+  font-size: 16px;
+  background: var(--input-bg);
+  min-height: 150px;
+}
+
+.editor-container .ql-toolbar {
+  border-radius: 8px 8px 0 0;
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+.editor-container .ql-editor {
+  min-height: 150px;
+}
+
+.submit-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.submit-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(46, 204, 113, 0.2);
+}
+
+.submit-button:disabled {
+  background: var(--primary-disabled);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .create-joke-card {
+    border-radius: 0;
+  }
+}
+
+/* --- RICH CONTENT STYLES --- */
+.rich-content {
+  word-break: break-word;
+}
+
+.rich-content p {
+  margin-bottom: 1rem;
+}
+
+.rich-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content h1,
+.rich-content h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.rich-content h1 {
+  font-size: 1.5rem;
+}
+
+.rich-content h2 {
+  font-size: 1.25rem;
+}
+
+.rich-content ul,
+.rich-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.rich-content blockquote {
+  border-left: 4px solid var(--border);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  color: var(--text-medium);
+}
+
+.rich-content pre {
+  background-color: #f5f5f5;
+  padding: 0.75rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.rich-content code {
+  background-color: #f5f5f5;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.rich-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+
+.rich-content a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.rich-content a:hover {
+  text-decoration: underline;
 }

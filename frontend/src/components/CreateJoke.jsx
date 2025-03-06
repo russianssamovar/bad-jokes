@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createJoke } from "../api/jokesApi";
 import { getCurrentUser } from "../api/authApi";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const CreateJoke = () => {
   const [body, setBody] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const user = getCurrentUser();
 
@@ -16,23 +19,63 @@ const CreateJoke = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (body.trim()) {
-      await createJoke(body);
-      navigate("/");
+    if (body.trim() && !isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        await createJoke(body);
+        navigate("/");
+      } catch (error) {
+        console.error("Failed to create joke:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
+  const modules = {
+    toolbar: [
+      ["bold", "italic", "underline", "strike"],
+      [{ header: 1 }, { header: 2 }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link", "blockquote", "code-block", "image"],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
+      ["clean"]
+    ]
+  };
+
+  const formats = [
+    "bold", "italic", "underline", "strike",
+    "header",
+    "list", "bullet",
+    "link", "blockquote", "code-block", "image",
+    "color", "background",
+    "align"
+  ];
+
   return (
-    <div className="auth-form">
-      <h2>Create a New Joke</h2>
-      <textarea
-        rows="5"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="Write your joke here..."
-      ></textarea>
-      <button onClick={handleSubmit}>Post</button>
-    </div>
+      <div className="create-joke-container">
+        <div className="create-joke-card">
+          <h2>Create a New Joke</h2>
+          <div className="editor-container">
+            <ReactQuill
+                theme="snow"
+                value={body}
+                onChange={setBody}
+                modules={modules}
+                formats={formats}
+                placeholder="Write your joke here..."
+            />
+          </div>
+          <button
+              className="submit-button"
+              onClick={handleSubmit}
+              disabled={!body.trim() || isSubmitting}
+          >
+            {isSubmitting ? "Posting..." : "Post Joke"}
+          </button>
+        </div>
+      </div>
   );
 };
 

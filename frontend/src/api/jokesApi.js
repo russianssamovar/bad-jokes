@@ -45,7 +45,7 @@ export const createJoke = async (body) => {
 
 export const deleteJoke = async (jokeId) => {
   await apiClient.delete(`/delete`, {
-    params: { id: jokeId }
+    params: { joke_id: jokeId }
   });
 };
 
