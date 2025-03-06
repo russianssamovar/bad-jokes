@@ -446,3 +446,47 @@ func (r *JokesRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([]mo
     
     return comments, nil
 }
+
+func (r *JokesRepository) GetCommentByID(commentID int64) (models.Comment, error) {
+	query := `
+		SELECT 
+			c.id, 
+			c.joke_id, 
+			c.parent_id, 
+			c.body, 
+			c.user_id,
+			u.username AS author_username,
+			c.created_at, 
+			c.modified_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.id = $1
+	`
+	
+	var comment models.Comment
+	var parentID sql.NullInt64
+	
+	err := r.db.QueryRow(query, commentID).Scan(
+		&comment.ID,
+		&comment.JokeID,
+		&parentID,
+		&comment.Body,
+		&comment.AuthorID,
+		&comment.AuthorUsername,
+		&comment.CreatedAt,
+		&comment.ModifiedAt,
+	)
+	
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return comment, ErrCommentNotFound
+		}
+		return comment, err
+	}
+	
+	if parentID.Valid {
+		comment.ParentID = parentID.Int64
+	}
+	
+	return comment, nil
+}

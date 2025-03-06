@@ -92,8 +92,8 @@ const ReactionsList = ({ jokeId, initialReactions, initialUserReactions, isLogge
                   className="reaction-splash-container"
                   style={{
                     position: "absolute",
-                    left: `${addButtonRef.current.closest(".reactions-wrapper").getBoundingClientRect().width - 70}px`,
-                    top: `${addButtonRef.current.getBoundingClientRect().top.toFixed()}`,
+                    left: `${reactionsRef.current[splashEffect.reaction]?.offsetLeft + 15}px`,
+                    top: `${reactionsRef.current[splashEffect.reaction]?.top + 15}px`,
                   }}
               >
                 {[...Array(8)].map((_, i) => (
@@ -123,7 +123,7 @@ const ReactionsList = ({ jokeId, initialReactions, initialUserReactions, isLogge
                 ref={popupRef}
                 style={{
                   position: "absolute",
-                  left: `${addButtonRef.current.closest(".reactions-wrapper").getBoundingClientRect().width}px`,
+                  left: addButtonRef.current.offsetLeft,
                   top: addButtonRef.current.getBoundingClientRect().bottom.toFixed(),
                 }}
             >

@@ -24,6 +24,7 @@ type Comment struct {
 	Social         SocialInteractions `json:"social"`
 	AuthorID       int64              `json:"author_id"`
 	AuthorUsername string             `json:"author_username"`
+    IsDeleted      bool               `json:"is_deleted"`
 }
 
 type SocialInteractions struct {
@@ -36,4 +37,9 @@ type SocialInteractions struct {
 type UserInteraction struct {
 	VoteType  string   `json:"vote_type,omitempty"`
 	Reactions []string `json:"reactions,omitempty"`
+}
+
+type JokeWithComments struct {
+	Joke     Joke      `json:"joke"`
+	Comments []Comment `json:"comments"`
 }

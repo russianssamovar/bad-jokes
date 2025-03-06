@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type JokesHandler struct {
@@ -196,31 +194,42 @@ func (h *JokesHandler) ReactToEntity(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *JokesHandler) AddComment(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		JokeID   int64  `json:"joke_id"`
-		Body     string `json:"body"`
-		ParentID *int64 `json:"parent_id"` // Added parent_id field
-	}
+    var input struct {
+        Body     string `json:"body"`
+        ParentID *int64 `json:"parent_id"`
+    }
 
-	userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+    jokeIDStr, ok := r.Context().Value("jokeId").(string)
+    if !ok {
+        http.Error(w, "Invalid joke ID", http.StatusBadRequest)
+        return
+    }
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
+    jokeID, err := strconv.ParseInt(jokeIDStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid joke ID", http.StatusBadRequest)
+        return
+    }
 
-	id, err := h.repo.AddComment(input.JokeID, userID, input.Body, input.ParentID)
-	if err != nil {
-		http.Error(w, "Failed to add comment", http.StatusInternalServerError)
-		return
-	}
+    userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
+    if !ok {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int64{"id": id})
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+        http.Error(w, "Invalid input", http.StatusBadRequest)
+        return
+    }
+
+    id, err := h.repo.AddComment(jokeID, userID, input.Body, input.ParentID)
+    if err != nil {
+        http.Error(w, "Failed to add comment", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(map[string]int64{"id": id})
 }
 
 func (h *JokesHandler) ListComments(w http.ResponseWriter, r *http.Request) {
@@ -275,37 +284,37 @@ func (h *JokesHandler) DeleteJoke(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *JokesHandler) GetJokeWithComments(w http.ResponseWriter, r *http.Request) {
-	jokeID, err := strconv.ParseInt(chi.URLParam(r, "jokeId"), 10, 64)
+	jokeIDStr, ok := r.Context().Value("jokeId").(string)
+	if !ok {
+		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
+		return
+	}
+
+	jokeID, err := strconv.ParseInt(jokeIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
 		return
 	}
 
-	var currentUserID int64
-	if userID, ok := r.Context().Value(middleware.UserIDKey).(int64); ok {
-		currentUserID = userID
-	}
+	userID, _ := r.Context().Value(middleware.UserIDKey).(int64)
 
-	joke, err := h.repo.GetJokeByID(jokeID, currentUserID)
+	joke, err := h.repo.GetJokeByID(jokeID, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Joke not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Failed to fetch joke", http.StatusInternalServerError)
+		http.Error(w, "Failed to get joke", http.StatusInternalServerError)
 		return
 	}
 
-	comments, err := h.repo.GetCommentsByJokeID(jokeID, currentUserID)
+	comments, err := h.repo.GetCommentsByJokeID(jokeID, userID)
 	if err != nil {
-		http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+		http.Error(w, "Failed to get comments", http.StatusInternalServerError)
 		return
 	}
 
-	response := struct {
-		Joke     models.Joke      `json:"joke"`
-		Comments []models.Comment `json:"comments"`
-	}{
+	response := models.JokeWithComments{
 		Joke:     joke,
 		Comments: comments,
 	}
@@ -315,48 +324,43 @@ func (h *JokesHandler) GetJokeWithComments(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *JokesHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
-    commentIDStr := chi.URLParam(r, "commentId")
-    commentID, err := strconv.ParseInt(commentIDStr, 10, 64)
-    if err != nil {
-        http.Error(w, "Invalid comment ID", http.StatusBadRequest)
-        return
-    }
-    
-    userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
-    if !ok {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
-    
-    jokeID, err := strconv.ParseInt(chi.URLParam(r, "jokeId"), 10, 64)
-    if err != nil {
-        http.Error(w, "Invalid joke ID", http.StatusBadRequest)
-        return
-    }
-    
-    comments, err := h.repo.GetComments(jokeID)
-    if err != nil {
-        http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
-        return
-    }
-    
-    var isAuthor bool
-    for _, comment := range comments {
-        if comment.ID == commentID && comment.AuthorID == userID {
-            isAuthor = true
-            break
-        }
-    }
-    
-    if !isAuthor {
-        http.Error(w, "Forbidden: You can only delete your own comments", http.StatusForbidden)
-        return
-    }
-    
-    if err := h.repo.DeleteComment(commentID); err != nil {
-        http.Error(w, "Failed to delete comment", http.StatusInternalServerError)
-        return
-    }
-    
-    w.WriteHeader(http.StatusNoContent)
+	commentIDStr, ok := r.Context().Value("commentId").(string)
+	if !ok {
+		http.Error(w, "Invalid comment ID", http.StatusBadRequest)
+		return
+	}
+	
+	commentID, err := strconv.ParseInt(commentIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid comment ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	comment, err := h.repo.GetCommentByID(commentID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Comment not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to fetch comment", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if comment.AuthorID != userID {
+		http.Error(w, "Forbidden: You can only delete your own comments", http.StatusForbidden)
+		return
+	}
+
+	if err := h.repo.DeleteComment(commentID); err != nil {
+		http.Error(w, "Failed to delete comment", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

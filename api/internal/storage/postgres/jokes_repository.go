@@ -259,7 +259,7 @@ func (r *JokesRepository) AddComment(jokeID, userID int64, body string, parentID
 
     var id int64
     query := `
-        INSERT INTO comments (joke_id, parent_id, body, author_id, created_at, modified_at)
+        INSERT INTO comments (joke_id, parent_id, body, user_id, created_at, modified_at)
         VALUES ($1, $2, $3, $4, NOW(), NOW())
         RETURNING id
     `
@@ -406,9 +406,10 @@ func (r *JokesRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([]mo
             c.joke_id,
             c.parent_id,
             c.body,
-            c.author_id,
+            c.user_id,
             u.username AS author_username,
             c.created_at,
+            c.is_deleted,
             c.modified_at,
             (
                 SELECT COALESCE(SUM(CASE WHEN vote_type = 'plus' THEN 1 WHEN vote_type = 'minus' THEN -1 ELSE 0 END), 0)
@@ -431,7 +432,7 @@ func (r *JokesRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([]mo
                 ''
             ) AS user_reactions
         FROM comments c
-        JOIN users u ON c.author_id = u.id
+        JOIN users u ON c.user_id = u.id
         LEFT JOIN votes uv ON c.id = uv.entity_id AND uv.entity_type = 'comment' AND uv.user_id = $2
         WHERE c.joke_id = $3
         ORDER BY 
@@ -462,6 +463,7 @@ func (r *JokesRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([]mo
             &comment.AuthorID,
             &comment.AuthorUsername,
             &comment.CreatedAt,
+            &comment.IsDeleted,
             &comment.ModifiedAt,
             &comment.Social.Pluses,
             &reactionsJSON,
@@ -517,7 +519,7 @@ func (r *JokesRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([]mo
 }
 
 func (r *JokesRepository) DeleteComment(commentID int64) error {
-    result, err := r.db.Exec("DELETE FROM comments WHERE id = $1", commentID)
+    result, err := r.db.Exec("UPDATE comments SET is_deleted = TRUE WHERE id = $1", commentID)
     if err != nil {
         return err
     }
@@ -532,4 +534,48 @@ func (r *JokesRepository) DeleteComment(commentID int64) error {
     }
     
     return nil
+}
+
+func (r *JokesRepository) GetCommentByID(commentID int64) (models.Comment, error) {
+	query := `
+		SELECT 
+			c.id, 
+			c.joke_id, 
+			c.parent_id, 
+			c.body, 
+			c.user_id,
+			u.username AS author_username,
+			c.created_at, 
+			c.modified_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.id = $1
+	`
+	
+	var comment models.Comment
+	var parentID sql.NullInt64
+	
+	err := r.db.QueryRow(query, commentID).Scan(
+		&comment.ID,
+		&comment.JokeID,
+		&parentID,
+		&comment.Body,
+		&comment.AuthorID,
+		&comment.AuthorUsername,
+		&comment.CreatedAt,
+		&comment.ModifiedAt,
+	)
+	
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return comment, ErrCommentNotFound
+		}
+		return comment, err
+	}
+	
+	if parentID.Valid {
+		comment.ParentID = parentID.Int64
+	}
+	
+	return comment, nil
 }

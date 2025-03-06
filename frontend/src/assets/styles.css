@@ -1102,3 +1102,12 @@ body {
   padding: 20px 0;
   font-style: italic;
 }
+
+.comment-deleted {
+  opacity: 0.7;
+}
+
+.deleted-comment {
+  color: #888;
+  font-style: italic;
+}

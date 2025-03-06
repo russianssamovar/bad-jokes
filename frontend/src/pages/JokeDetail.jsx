@@ -34,7 +34,7 @@ const JokeDetail = () => {
     }, [jokeId]);
 
     const handleCommentAdded = (newComment) => {
-        setComments((prevComments) => [...prevComments, newComment]);
+        setComments(prevComments => [...(prevComments || []), newComment]);
     };
 
     const handleCommentDeleted = (commentId) => {
@@ -69,7 +69,7 @@ const JokeDetail = () => {
                             />
                         )}
 
-                        {comments.length > 0 ? (
+                        {comments?.length > 0 ? (
                             <CommentList
                                 comments={comments}
                                 onCommentDeleted={handleCommentDeleted}

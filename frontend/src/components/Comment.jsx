@@ -27,49 +27,57 @@ const Comment = ({ comment, onCommentDeleted }) => {
     };
 
     return (
-        <div className="comment">
+        <div className={`comment ${comment.is_deleted ? 'comment-deleted' : ''}`}>
             <div className="comment-header">
                 <span className="comment-author">{comment.author_username}</span>
                 <span className="comment-time">
-          {formatDistanceToNow(new Date(comment.created_at))} ago
-        </span>
+                  {formatDistanceToNow(new Date(comment.created_at))} ago
+                </span>
             </div>
 
-            <div
-                className="comment-body rich-content"
-                dangerouslySetInnerHTML={{ __html: comment.body }}
-            />
-
-            <div className="comment-actions">
-                <ReactionsList
-                    entityType="comment"
-                    entityId={comment.id}
-                    initialReactions={comment.social.reactions}
-                    initialUserReactions={comment.social?.user?.reactions}
-                    isLoggedIn={!!currentUser}
-                />
-
-                <div className="comment-buttons">
-                    {currentUser && (
-                        <button className="reply-button" onClick={toggleReplyForm}>
-                            Reply
-                        </button>
-                    )}
-
-                    {isAuthor && (
-                        <button className="delete-button" onClick={handleDelete}>
-                            Delete
-                        </button>
-                    )}
+            {comment.is_deleted ? (
+                <div className="comment-body deleted-comment">
+                    <i>This comment has been deleted</i>
                 </div>
-
-                <VotingPanel
-                    entityType="comment"
-                    entityId={comment.id}
-                    initialScore={comment.social.pluses}
-                    initialVote={comment.social?.user?.vote_type}
+            ) : (
+                <div
+                    className="comment-body rich-content"
+                    dangerouslySetInnerHTML={{ __html: comment.body }}
                 />
-            </div>
+            )}
+
+            {!comment.is_deleted && (
+                <div className="comment-actions">
+                    <ReactionsList
+                        entityType="comment"
+                        entityId={comment.id}
+                        initialReactions={comment.social.reactions}
+                        initialUserReactions={comment.social?.user?.reactions}
+                        isLoggedIn={!!currentUser}
+                    />
+
+                    <div className="comment-buttons">
+                        {currentUser && (
+                            <button className="reply-button" onClick={toggleReplyForm}>
+                                Reply
+                            </button>
+                        )}
+
+                        {isAuthor && (
+                            <button className="delete-button" onClick={handleDelete}>
+                                Delete
+                            </button>
+                        )}
+                    </div>
+
+                    <VotingPanel
+                        entityType="comment"
+                        entityId={comment.id}
+                        initialScore={comment.social.pluses}
+                        initialVote={comment.social?.user?.vote_type}
+                    />
+                </div>
+            )}
 
             {showReplyForm && currentUser && (
                 <div className="reply-form-container">

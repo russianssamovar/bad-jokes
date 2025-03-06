@@ -18,20 +18,21 @@ type UserRepository interface {
 }
 
 type JokesRepository interface {
-    Insert(body string, authorID int64) (int64, error)
-    ListPage(page, pageSize int, sortField, order string, currentUserID int64) ([]models.Joke, error)
-    AddVote(entityType string, entityID, userID int64, voteType string) error
-    RemoveVote(entityType string, entityID, userID int64) error
-    GetVote(entityType string, entityID, userID int64) (string, error)
-    AddReaction(entityType string, entityID, userID int64, reactionType string) error
-    RemoveReaction(entityType string, entityID, userID int64, reactionType string) error
-    GetReaction(entityType string, entityID, userID int64, reactionType string) (bool, error)
-    DeleteJoke(jokeID int64) error
-    GetJokeByID(jokeID, currentUserID int64) (models.Joke, error) // Updated signature
-    AddComment(jokeID, userID int64, body string, parentID *int64) (int64, error) // Added parentID parameter
-    GetComments(jokeID int64) ([]models.Comment, error)
-    GetCommentsByJokeID(jokeID, currentUserID int64) ([]models.Comment, error)
-    DeleteComment(commentID int64) error // Added method to delete comments
+	Insert(body string, authorID int64) (int64, error)
+	ListPage(page, pageSize int, sortField, order string, currentUserID int64) ([]models.Joke, error)
+	AddVote(entityType string, entityID, userID int64, voteType string) error
+	RemoveVote(entityType string, entityID, userID int64) error
+	GetVote(entityType string, entityID, userID int64) (string, error)
+	AddReaction(entityType string, entityID, userID int64, reactionType string) error
+	RemoveReaction(entityType string, entityID, userID int64, reactionType string) error
+	GetReaction(entityType string, entityID, userID int64, reactionType string) (bool, error)
+	DeleteJoke(jokeID int64) error
+	GetJokeByID(jokeID, currentUserID int64) (models.Joke, error)
+	AddComment(jokeID, userID int64, body string, parentID *int64) (int64, error)
+	GetComments(jokeID int64) ([]models.Comment, error)
+	GetCommentsByJokeID(jokeID, currentUserID int64) ([]models.Comment, error)
+	DeleteComment(commentID int64) error
+	GetCommentByID(commentID int64) (models.Comment, error)
 }
 
 func NewUserRepository(dbType string, dbConn *sql.DB) UserRepository {
