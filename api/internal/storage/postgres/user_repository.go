@@ -24,7 +24,7 @@ func (r *UserRepository) Register(username, email, password string) (int64, erro
 
 	query := `
 		INSERT INTO users (username, email, password, is_password_hashed, created_at, modified_at)
-		VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+		VALUES ($1, $2, $3, 1, NOW(), NOW())
 		RETURNING id
 	`
 	var id int64
