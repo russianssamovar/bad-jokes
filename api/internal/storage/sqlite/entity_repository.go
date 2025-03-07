@@ -2,14 +2,19 @@ package sqlite
 
 import (
 	"database/sql"
+	"log/slog"
 )
 
 type EntityRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
-func NewEntityRepository(db *sql.DB) *EntityRepository {
-	return &EntityRepository{db: db}
+func NewEntityRepository(db *sql.DB, log *slog.Logger) *EntityRepository {
+	return &EntityRepository{
+		db:  db,
+		log: log.With(slog.String("component", "entity_repository")),
+	}
 }
 
 func (r *EntityRepository) AddVote(entityType string, entityID, userID int64, voteType string) error {

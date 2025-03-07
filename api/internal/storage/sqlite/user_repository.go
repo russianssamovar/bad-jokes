@@ -4,16 +4,21 @@ import (
 	"badJokes/internal/models"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(db *sql.DB, log *slog.Logger) *UserRepository {
+	return &UserRepository{
+		db:  db,
+		log: log.With(slog.String("component", "user_repository")),
+	}
 }
 
 func (r *UserRepository) Register(username, email, password string) (int64, error) {

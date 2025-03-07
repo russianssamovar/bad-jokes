@@ -5,6 +5,7 @@ import (
     "badJokes/internal/storage/postgres"
     "badJokes/internal/storage/sqlite"
     "database/sql"
+    "log/slog"
 )
 
 type UserRepository interface {
@@ -36,45 +37,45 @@ type EntityRepository interface {
     GetReaction(entityType string, entityID, userID int64, reactionType string) (bool, error)
 }
 
-func NewUserRepository(dbType string, dbConn *sql.DB) UserRepository {
+func NewUserRepository(dbType string, dbConn *sql.DB, log *slog.Logger) UserRepository {
     switch dbType {
     case "postgres":
-        return postgres.NewUserRepository(dbConn)
+        return postgres.NewUserRepository(dbConn, log)
     case "sqlite":
-        return sqlite.NewUserRepository(dbConn)
+        return sqlite.NewUserRepository(dbConn, log)
     default:
         panic("unsupported database type")
     }
 }
 
-func NewJokesRepository(dbType string, dbConn *sql.DB) JokesRepository {
+func NewJokesRepository(dbType string, dbConn *sql.DB, log *slog.Logger) JokesRepository {
     switch dbType {
     case "postgres":
-        return postgres.NewJokesRepository(dbConn)
+        return postgres.NewJokesRepository(dbConn, log)
     case "sqlite":
-        return sqlite.NewJokesRepository(dbConn)
+        return sqlite.NewJokesRepository(dbConn, log)
     default:
         panic("unsupported database type")
     }
 }
 
-func NewCommentsRepository(dbType string, dbConn *sql.DB) CommentsRepository {
+func NewCommentsRepository(dbType string, dbConn *sql.DB, log *slog.Logger) CommentsRepository {
     switch dbType {
     case "postgres":
-        return postgres.NewCommentsRepository(dbConn)
+        return postgres.NewCommentsRepository(dbConn, log)
     case "sqlite":
-        return sqlite.NewCommentsRepository(dbConn)
+        return sqlite.NewCommentsRepository(dbConn, log)
     default:
         panic("unsupported database type")
     }
 }
 
-func NewEntityRepository(dbType string, dbConn *sql.DB) EntityRepository {
+func NewEntityRepository(dbType string, dbConn *sql.DB, log *slog.Logger) EntityRepository {
     switch dbType {
     case "postgres":
-        return postgres.NewEntityRepository(dbConn)
+        return postgres.NewEntityRepository(dbConn, log)
     case "sqlite":
-        return sqlite.NewEntityRepository(dbConn)
+        return sqlite.NewEntityRepository(dbConn, log)
     default:
         panic("unsupported database type")
     }

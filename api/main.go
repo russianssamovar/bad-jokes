@@ -19,47 +19,48 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoad()
-	log := setupLogger(cfg.Env)
+    cfg := config.MustLoad()
+    log := setupLogger(cfg.Env)
 
-	db, err := sql.Open(cfg.Db.Driver, cfg.Db.ConnectionString)
-	if err != nil {
-		log.Error("Failed to connect to database", sl.Err(err))
-		os.Exit(1)
-	}
-	defer db.Close()
+    log.Info("Starting application", slog.String("env", cfg.Env))
 
-	if err := storage.Migrate(db, "storage/migrations"); err != nil {
-		log.Error("Failed to run migrations", sl.Err(err))
-		os.Exit(1)
-	}
+    db, err := sql.Open(cfg.Db.Driver, cfg.Db.ConnectionString)
+    if err != nil {
+        log.Error("Failed to connect to database", sl.Err(err))
+        os.Exit(1)
+    }
+    defer db.Close()
 
-	// Initialize repositories
-	userRepo := storage.NewUserRepository(cfg.Db.Driver, db)
-	jokesRepo := storage.NewJokesRepository(cfg.Db.Driver, db)
-	commentRepo := storage.NewCommentsRepository(cfg.Db.Driver, db)
-	entityRepo := storage.NewEntityRepository(cfg.Db.Driver, db)
+    if err := storage.Migrate(db, "storage/migrations"); err != nil {
+        log.Error("Failed to run migrations", sl.Err(err))
+        os.Exit(1)
+    }
+    log.Info("Database migrations completed successfully")
 
-	// Initialize handlers
-	jokesHandler := handlers.NewJokesHandler(jokesRepo, commentRepo)
-	commentHandler := handlers.NewCommentHandler(commentRepo)
-	entityHandler := handlers.NewEntityHandler(entityRepo)
-	authHandler := handlers.NewAuthHandler(userRepo, cfg)
+    userRepo := storage.NewUserRepository(cfg.Db.Driver, db, log)
+    jokesRepo := storage.NewJokesRepository(cfg.Db.Driver, db, log)
+    commentRepo := storage.NewCommentsRepository(cfg.Db.Driver, db, log)
+    entityRepo := storage.NewEntityRepository(cfg.Db.Driver, db, log)
 
-	authMiddleware := middleware.NewAuthMiddleware(cfg)
+    jokesHandler := handlers.NewJokesHandler(jokesRepo, commentRepo, log)
+    commentHandler := handlers.NewCommentHandler(commentRepo, log)
+    entityHandler := handlers.NewEntityHandler(entityRepo, log)
+    authHandler := handlers.NewAuthHandler(userRepo, cfg, log)
 
-	mux := http.NewServeMux()
-	setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, authMiddleware)
-	handler := corsMiddleware(mux)
+    authMiddleware := middleware.NewAuthMiddleware(cfg)
 
-	listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
-	flag.Parse()
+    mux := http.NewServeMux()
+    setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, authMiddleware)
+    handler := corsMiddleware(mux)
 
-	log.Info("Server started at", slog.String("address", cfg.HTTPServer.Address))
-	if err := http.ListenAndServe(*listenAddr, handler); err != nil {
-		log.Error("Failed to start server", sl.Err(err))
-		os.Exit(1)
-	}
+    listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
+    flag.Parse()
+
+    log.Info("Server started", slog.String("address", cfg.HTTPServer.Address))
+    if err := http.ListenAndServe(*listenAddr, handler); err != nil {
+        log.Error("Failed to start server", sl.Err(err))
+        os.Exit(1)
+    }
 }
 
 func setupRoutes(
@@ -85,11 +86,25 @@ func setupRoutes(
 		}
 	})))
 
-	// Entity interactions (votes and reactions)
 	mux.Handle("/api/votes", authMiddleware.Middleware(http.HandlerFunc(entityHandler.Vote)))
 	mux.Handle("/api/reactions", authMiddleware.Middleware(http.HandlerFunc(entityHandler.HandleReaction)))
+	
+	mux.Handle("/api/jokes/react", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			entityHandler.HandleReaction(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})))
 
-	// Single joke with comments
+	mux.Handle("/api/jokes/vote", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			entityHandler.Vote(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
 	mux.Handle("/api/jokes/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		pathSegments := strings.Split(strings.TrimPrefix(path, "/api/jokes/"), "/")
@@ -101,7 +116,6 @@ func setupRoutes(
 
 		jokeID := pathSegments[0]
 
-		// Handle /api/jokes/{id}
 		if len(pathSegments) == 1 {
 			r = r.WithContext(context.WithValue(r.Context(), "jokeId", jokeID))
 
@@ -116,7 +130,6 @@ func setupRoutes(
 			return
 		}
 
-		// Handle /api/jokes/{id}/comments
 		if len(pathSegments) == 2 && pathSegments[1] == "comments" {
 			r = r.WithContext(context.WithValue(r.Context(), "jokeId", jokeID))
 
@@ -132,7 +145,6 @@ func setupRoutes(
 		http.Error(w, "Not found", http.StatusNotFound)
 	}))
 
-	// Comments operations
 	mux.Handle("/api/comments", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -142,7 +154,6 @@ func setupRoutes(
 		}
 	})))
 
-	// Comment deletion
 	mux.Handle("/api/comments/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		pathSegments := strings.Split(strings.TrimPrefix(path, "/api/comments/"), "/")

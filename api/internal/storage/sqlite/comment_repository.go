@@ -4,15 +4,20 @@ import (
 	"badJokes/internal/models"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
 type CommentsRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
-func NewCommentsRepository(db *sql.DB) *CommentsRepository {
-	return &CommentsRepository{db: db}
+func NewCommentsRepository(db *sql.DB, log *slog.Logger) *CommentsRepository {
+	return &CommentsRepository{
+		db:  db,
+		log: log.With(slog.String("component", "comments_repository")),
+	}
 }
 
 func (r *CommentsRepository) AddComment(jokeID, userID int64, body string, parentID *int64) (int64, error) {
@@ -237,10 +242,10 @@ func (r *CommentsRepository) GetCommentByID(commentID int64) (models.Comment, er
 		JOIN users u ON c.user_id = u.id
 		WHERE c.id = ?
 	`
-	
+
 	var comment models.Comment
 	var parentID sql.NullInt64
-	
+
 	err := r.db.QueryRow(query, commentID).Scan(
 		&comment.ID,
 		&comment.JokeID,
@@ -251,17 +256,17 @@ func (r *CommentsRepository) GetCommentByID(commentID int64) (models.Comment, er
 		&comment.CreatedAt,
 		&comment.ModifiedAt,
 	)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return comment, ErrCommentNotFound
 		}
 		return comment, err
 	}
-	
+
 	if parentID.Valid {
 		comment.ParentID = parentID.Int64
 	}
-	
+
 	return comment, nil
 }

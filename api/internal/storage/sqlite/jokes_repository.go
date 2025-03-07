@@ -1,45 +1,49 @@
 package sqlite
 
 import (
-    "badJokes/internal/models"
-    "database/sql"
-    "fmt"
-    "strings"
+	"badJokes/internal/models"
+	"database/sql"
+	"fmt"
+	"log/slog"
+	"strings"
 
-    _ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type JokesRepository struct {
-    db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
-func NewJokesRepository(db *sql.DB) *JokesRepository {
-    return &JokesRepository{db: db}
+func NewJokesRepository(db *sql.DB, log *slog.Logger) *JokesRepository {
+	return &JokesRepository{
+		db:  db,
+		log: log.With(slog.String("component", "jokes_repository")),
+	}
 }
-
 func (r *JokesRepository) Insert(body string, authorID int64) (int64, error) {
-    stmt, err := r.db.Prepare("INSERT INTO jokes(body, author_id, created_at, modified_at) VALUES(?, ?, datetime('now'), datetime('now'))")
-    if err != nil {
-        return 0, fmt.Errorf("failed to prepare statement: %w", err)
-    }
-    defer stmt.Close()
+	stmt, err := r.db.Prepare("INSERT INTO jokes(body, author_id, created_at, modified_at) VALUES(?, ?, datetime('now'), datetime('now'))")
+	if err != nil {
+		return 0, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
 
-    res, err := stmt.Exec(body, authorID)
-    if err != nil {
-        return 0, fmt.Errorf("failed to execute statement: %w", err)
-    }
+	res, err := stmt.Exec(body, authorID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute statement: %w", err)
+	}
 
-    id, err := res.LastInsertId()
-    if err != nil {
-        return 0, fmt.Errorf("failed to get last insert ID: %w", err)
-    }
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last insert ID: %w", err)
+	}
 
-    return id, nil
+	return id, nil
 }
 
 func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, currentUserID int64) ([]models.Joke, error) {
-    offset := (page - 1) * pageSize
-    query := `
+	offset := (page - 1) * pageSize
+	query := `
         SELECT j.id, j.body, j.author_id, j.created_at, j.modified_at, 
                COUNT(DISTINCT v.id) as vote_count,
                COUNT(DISTINCT c.id) as comment_count,
@@ -56,56 +60,56 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
         ORDER BY j.` + sortField + ` ` + order + `
         LIMIT ? OFFSET ?`
 
-    rows, err := r.db.Query(query, currentUserID, currentUserID, pageSize, offset)
-    if err != nil {
-        return nil, fmt.Errorf("failed to list jokes: %w", err)
-    }
-    defer rows.Close()
+	rows, err := r.db.Query(query, currentUserID, currentUserID, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list jokes: %w", err)
+	}
+	defer rows.Close()
 
-    var jokes []models.Joke
-    for rows.Next() {
-        var joke models.Joke
-        var reactions sql.NullString
-        var userVote sql.NullString
-        var userReactions sql.NullString
+	var jokes []models.Joke
+	for rows.Next() {
+		var joke models.Joke
+		var reactions sql.NullString
+		var userVote sql.NullString
+		var userReactions sql.NullString
 
-        if err := rows.Scan(&joke.ID, &joke.Body, &joke.AuthorID, &joke.CreatedAt, &joke.ModifiedAt,
-            &joke.Social.Pluses, &joke.CommentCount, &reactions, &userVote, &userReactions); err != nil {
-            return nil, fmt.Errorf("failed to scan joke: %w", err)
-        }
+		if err := rows.Scan(&joke.ID, &joke.Body, &joke.AuthorID, &joke.CreatedAt, &joke.ModifiedAt,
+			&joke.Social.Pluses, &joke.CommentCount, &reactions, &userVote, &userReactions); err != nil {
+			return nil, fmt.Errorf("failed to scan joke: %w", err)
+		}
 
-        reactionMap := map[string]int{}
-        if reactions.Valid && reactions.String != "[]" {
-            for _, reaction := range strings.Split(strings.Trim(reactions.String, "[]"), ",") {
-                reaction = strings.TrimSpace(reaction)
-                reactionMap[reaction]++
-            }
-        }
-        joke.Social.Reactions = reactionMap
+		reactionMap := map[string]int{}
+		if reactions.Valid && reactions.String != "[]" {
+			for _, reaction := range strings.Split(strings.Trim(reactions.String, "[]"), ",") {
+				reaction = strings.TrimSpace(reaction)
+				reactionMap[reaction]++
+			}
+		}
+		joke.Social.Reactions = reactionMap
 
-        if userVote.Valid && userVote.String != "" {
-            joke.Social.User = &models.UserInteraction{VoteType: userVote.String}
-        }
+		if userVote.Valid && userVote.String != "" {
+			joke.Social.User = &models.UserInteraction{VoteType: userVote.String}
+		}
 
-        if userReactions.Valid && userReactions.String != "[]" {
-            userReactionsArray := strings.Split(strings.Trim(userReactions.String, "[]"), ",")
-            for i, r := range userReactionsArray {
-                userReactionsArray[i] = strings.TrimSpace(r)
-            }
-            if joke.Social.User == nil {
-                joke.Social.User = &models.UserInteraction{}
-            }
-            joke.Social.User.Reactions = userReactionsArray
-        }
+		if userReactions.Valid && userReactions.String != "[]" {
+			userReactionsArray := strings.Split(strings.Trim(userReactions.String, "[]"), ",")
+			for i, r := range userReactionsArray {
+				userReactionsArray[i] = strings.TrimSpace(r)
+			}
+			if joke.Social.User == nil {
+				joke.Social.User = &models.UserInteraction{}
+			}
+			joke.Social.User.Reactions = userReactionsArray
+		}
 
-        jokes = append(jokes, joke)
-    }
+		jokes = append(jokes, joke)
+	}
 
-    return jokes, nil
+	return jokes, nil
 }
 
 func (r *JokesRepository) GetJokeByID(jokeID, currentUserID int64) (models.Joke, error) {
-    query := `
+	query := `
         SELECT 
             j.id,
             j.body,
@@ -130,60 +134,60 @@ func (r *JokesRepository) GetJokeByID(jokeID, currentUserID int64) (models.Joke,
         WHERE j.id = ?
         GROUP BY j.id, j.body, j.author_id, j.created_at, j.modified_at, uv.vote_type, u.username
     `
-    
-    var joke models.Joke
-    var reactions sql.NullString
-    var userVote sql.NullString
-    var userReactions sql.NullString
-    var authorUsername string
-    
-    err := r.db.QueryRow(query, currentUserID, currentUserID, jokeID).Scan(
-        &joke.ID,
-        &joke.Body,
-        &joke.AuthorID,
-        &joke.CreatedAt,
-        &joke.ModifiedAt,
-        &joke.Social.Pluses,
-        &joke.CommentCount,
-        &reactions,
-        &userVote,
-        &userReactions,
-        &authorUsername,
-    )
-    if err != nil {
-        return joke, err
-    }
-    
-    reactionMap := map[string]int{}
-    if reactions.Valid && reactions.String != "" {
-        for _, reaction := range strings.Split(strings.TrimSpace(reactions.String), ",") {
-            if reaction != "" {
-                reactionMap[reaction]++
-            }
-        }
-    }
-    joke.Social.Reactions = reactionMap
-    
-    if userVote.Valid && userVote.String != "" {
-        joke.Social.User = &models.UserInteraction{VoteType: userVote.String}
-    }
-    
-    if userReactions.Valid && userReactions.String != "" {
-        userReactionsArray := strings.Split(userReactions.String, ",")
-        for i, r := range userReactionsArray {
-            userReactionsArray[i] = strings.TrimSpace(r)
-        }
-        if joke.Social.User == nil {
-            joke.Social.User = &models.UserInteraction{}
-        }
-        joke.Social.User.Reactions = userReactionsArray
-    }
-    
-    joke.AuthorUsername = authorUsername
-    return joke, nil
+
+	var joke models.Joke
+	var reactions sql.NullString
+	var userVote sql.NullString
+	var userReactions sql.NullString
+	var authorUsername string
+
+	err := r.db.QueryRow(query, currentUserID, currentUserID, jokeID).Scan(
+		&joke.ID,
+		&joke.Body,
+		&joke.AuthorID,
+		&joke.CreatedAt,
+		&joke.ModifiedAt,
+		&joke.Social.Pluses,
+		&joke.CommentCount,
+		&reactions,
+		&userVote,
+		&userReactions,
+		&authorUsername,
+	)
+	if err != nil {
+		return joke, err
+	}
+
+	reactionMap := map[string]int{}
+	if reactions.Valid && reactions.String != "" {
+		for _, reaction := range strings.Split(strings.TrimSpace(reactions.String), ",") {
+			if reaction != "" {
+				reactionMap[reaction]++
+			}
+		}
+	}
+	joke.Social.Reactions = reactionMap
+
+	if userVote.Valid && userVote.String != "" {
+		joke.Social.User = &models.UserInteraction{VoteType: userVote.String}
+	}
+
+	if userReactions.Valid && userReactions.String != "" {
+		userReactionsArray := strings.Split(userReactions.String, ",")
+		for i, r := range userReactionsArray {
+			userReactionsArray[i] = strings.TrimSpace(r)
+		}
+		if joke.Social.User == nil {
+			joke.Social.User = &models.UserInteraction{}
+		}
+		joke.Social.User.Reactions = userReactionsArray
+	}
+
+	joke.AuthorUsername = authorUsername
+	return joke, nil
 }
 
 func (r *JokesRepository) DeleteJoke(jokeID int64) error {
-    _, err := r.db.Exec("DELETE FROM jokes WHERE id = ?", jokeID)
-    return err
+	_, err := r.db.Exec("DELETE FROM jokes WHERE id = ?", jokeID)
+	return err
 }

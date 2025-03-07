@@ -36,7 +36,7 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
     setHasVoted(newVote);
     setScore(newScore);
 
-    await voteEntity(entityType, entityId, voteType);
+    await voteEntity(entityType, entityId, newVote);
   };
 
   return (

@@ -1,27 +1,41 @@
 package postgres
 
 import (
+	"badJokes/internal/lib/sl"
 	"badJokes/internal/models"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
 type CommentsRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
-func NewCommentsRepository(db *sql.DB) *CommentsRepository {
-	return &CommentsRepository{db: db}
+func NewCommentsRepository(db *sql.DB, log *slog.Logger) *CommentsRepository {
+	return &CommentsRepository{
+		db:  db,
+		log: log.With(slog.String("component", "comments_repository")),
+	}
 }
 
 func (r *CommentsRepository) AddComment(jokeID, userID int64, body string, parentID *int64) (int64, error) {
+	r.log.Debug("Adding comment",
+		slog.Int64("joke_id", jokeID),
+		slog.Int64("user_id", userID),
+		slog.String("body_length", fmt.Sprintf("%d chars", len(body))),
+		slog.Int64("parent_id", func() int64 { if parentID != nil { return *parentID } else { return 0 } }()))
+
 	var exists bool
 	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM jokes WHERE id = $1)", jokeID).Scan(&exists)
 	if err != nil {
+		r.log.Error("Failed to check joke existence", sl.Err(err))
 		return 0, err
 	}
 	if !exists {
+		r.log.Info("Joke not found", slog.Int64("joke_id", jokeID))
 		return 0, ErrJokeNotFound
 	}
 
@@ -29,9 +43,11 @@ func (r *CommentsRepository) AddComment(jokeID, userID int64, body string, paren
 		err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM comments WHERE id = $1 AND joke_id = $2)",
 			*parentID, jokeID).Scan(&exists)
 		if err != nil {
+			r.log.Error("Failed to check parent comment existence", sl.Err(err))
 			return 0, err
 		}
 		if !exists {
+			r.log.Info("Parent comment not found", slog.Int64("parent_id", *parentID))
 			return 0, ErrCommentNotFound
 		}
 	}
@@ -44,19 +60,24 @@ func (r *CommentsRepository) AddComment(jokeID, userID int64, body string, paren
     `
 	err = r.db.QueryRow(query, jokeID, parentID, body, userID).Scan(&id)
 	if err != nil {
+		r.log.Error("Failed to insert comment", sl.Err(err))
 		return 0, err
 	}
 
+	r.log.Info("Comment added successfully", slog.Int64("comment_id", id))
 	return id, nil
 }
 
 func (r *CommentsRepository) GetComments(jokeID int64) ([]models.Comment, error) {
+	r.log.Debug("Fetching comments", slog.Int64("joke_id", jokeID))
+
 	rows, err := r.db.Query(`
 		SELECT id, joke_id, user_id, body, created_at, modified_at
 		FROM comments
 		WHERE joke_id = $1
 	`, jokeID)
 	if err != nil {
+		r.log.Error("Failed to fetch comments", sl.Err(err))
 		return nil, fmt.Errorf("failed to fetch comments: %w", err)
 	}
 	defer rows.Close()
@@ -72,14 +93,26 @@ func (r *CommentsRepository) GetComments(jokeID int64) ([]models.Comment, error)
 			&comment.CreatedAt,
 			&comment.ModifiedAt,
 		); err != nil {
+			r.log.Error("Failed to scan comment", sl.Err(err))
 			return nil, fmt.Errorf("failed to scan comment: %w", err)
 		}
 		comments = append(comments, comment)
 	}
+
+	if err = rows.Err(); err != nil {
+		r.log.Error("Error iterating comment rows", sl.Err(err))
+		return nil, fmt.Errorf("error iterating comment rows: %w", err)
+	}
+
+	r.log.Debug("Comments fetched successfully", slog.Int("count", len(comments)))
 	return comments, nil
 }
 
 func (r *CommentsRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([]models.Comment, error) {
+	r.log.Debug("Fetching comments by joke ID",
+		slog.Int64("joke_id", jokeID),
+		slog.Int64("current_user_id", currentUserID))
+
 	query := `
         SELECT 
             c.id,
@@ -123,6 +156,7 @@ func (r *CommentsRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([
 
 	rows, err := r.db.Query(query, currentUserID, currentUserID, jokeID)
 	if err != nil {
+		r.log.Error("Failed to fetch comments by joke ID", sl.Err(err))
 		return nil, err
 	}
 	defer rows.Close()
@@ -150,6 +184,7 @@ func (r *CommentsRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([
 			&userVote,
 			&userReactions,
 		); err != nil {
+			r.log.Error("Failed to scan comment", sl.Err(err))
 			return nil, err
 		}
 
@@ -198,28 +233,42 @@ func (r *CommentsRepository) GetCommentsByJokeID(jokeID, currentUserID int64) ([
 		comments = append(comments, comment)
 	}
 
+	if err = rows.Err(); err != nil {
+		r.log.Error("Error iterating comment rows", sl.Err(err))
+		return nil, err
+	}
+
+	r.log.Debug("Comments fetched successfully", slog.Int("count", len(comments)))
 	return comments, nil
 }
 
 func (r *CommentsRepository) DeleteComment(commentID int64) error {
+	r.log.Info("Deleting comment", slog.Int64("comment_id", commentID))
+
 	result, err := r.db.Exec("UPDATE comments SET is_deleted = TRUE WHERE id = $1", commentID)
 	if err != nil {
+		r.log.Error("Failed to delete comment", sl.Err(err))
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		r.log.Error("Failed to get rows affected", sl.Err(err))
 		return err
 	}
 
 	if rowsAffected == 0 {
+		r.log.Info("Comment not found", slog.Int64("comment_id", commentID))
 		return ErrCommentNotFound
 	}
 
+	r.log.Info("Comment deleted successfully", slog.Int64("comment_id", commentID))
 	return nil
 }
 
 func (r *CommentsRepository) GetCommentByID(commentID int64) (models.Comment, error) {
+	r.log.Debug("Fetching comment by ID", slog.Int64("comment_id", commentID))
+
 	query := `
 		SELECT 
 			c.id, 
@@ -251,8 +300,10 @@ func (r *CommentsRepository) GetCommentByID(commentID int64) (models.Comment, er
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			r.log.Info("Comment not found", slog.Int64("comment_id", commentID))
 			return comment, ErrCommentNotFound
 		}
+		r.log.Error("Failed to fetch comment by ID", sl.Err(err))
 		return comment, err
 	}
 
@@ -260,5 +311,6 @@ func (r *CommentsRepository) GetCommentByID(commentID int64) (models.Comment, er
 		comment.ParentID = parentID.Int64
 	}
 
+	r.log.Debug("Comment fetched successfully", slog.Int64("comment_id", commentID))
 	return comment, nil
 }

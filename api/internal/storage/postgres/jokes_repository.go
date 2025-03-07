@@ -1,22 +1,31 @@
-// api/internal/storage/postgres/joke_repository.go
 package postgres
 
 import (
+	"badJokes/internal/lib/sl"
 	"badJokes/internal/models"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
 type JokesRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	log *slog.Logger
 }
 
-func NewJokesRepository(db *sql.DB) *JokesRepository {
-	return &JokesRepository{db: db}
+func NewJokesRepository(db *sql.DB, log *slog.Logger) *JokesRepository {
+	return &JokesRepository{
+		db:  db,
+		log: log.With(slog.String("component", "jokes_repository")),
+	}
 }
 
 func (r *JokesRepository) Insert(body string, authorID int64) (int64, error) {
+	r.log.Debug("Inserting new joke",
+		slog.Int64("author_id", authorID),
+		slog.String("body_length", fmt.Sprintf("%d chars", len(body))))
+
 	query := `
 		INSERT INTO jokes (body, author_id, created_at, modified_at)
 		VALUES ($1, $2, NOW(), NOW())
@@ -25,12 +34,26 @@ func (r *JokesRepository) Insert(body string, authorID int64) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(query, body, authorID).Scan(&id)
 	if err != nil {
+		r.log.Error("Failed to insert joke",
+			sl.Err(err),
+			slog.Int64("author_id", authorID))
 		return 0, fmt.Errorf("failed to insert joke: %w", err)
 	}
+	
+	r.log.Info("Joke created successfully",
+		slog.Int64("joke_id", id),
+		slog.Int64("author_id", authorID))
 	return id, nil
 }
 
 func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, currentUserID int64) ([]models.Joke, error) {
+	r.log.Debug("Listing jokes with pagination",
+		slog.Int("page", page),
+		slog.Int("page_size", pageSize),
+		slog.String("sort_field", sortField),
+		slog.String("order", order),
+		slog.Int64("current_user_id", currentUserID))
+
 	offset := (page - 1) * pageSize
 
 	baseQuery := `
@@ -114,10 +137,15 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 		}
 	default:
 		query = baseQuery + " ORDER BY j.created_at DESC LIMIT $3 OFFSET $4"
+		r.log.Debug("Using default sort", slog.String("sort_field", "created_at"), slog.String("order", "desc"))
 	}
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
+		r.log.Error("Failed to list jokes",
+			sl.Err(err),
+			slog.Int("page", page),
+			slog.Int("page_size", pageSize))
 		return nil, fmt.Errorf("failed to list jokes: %w", err)
 	}
 	defer rows.Close()
@@ -140,6 +168,7 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 			&userVote,
 			&userReactions,
 		); err != nil {
+			r.log.Error("Failed to scan joke row", sl.Err(err))
 			return nil, fmt.Errorf("failed to scan joke: %w", err)
 		}
 
@@ -179,10 +208,22 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 		jokes = append(jokes, joke)
 	}
 
+	if err = rows.Err(); err != nil {
+		r.log.Error("Error iterating joke rows", sl.Err(err))
+		return nil, fmt.Errorf("error iterating joke rows: %w", err)
+	}
+
+	r.log.Debug("Retrieved jokes successfully", 
+		slog.Int("page", page),
+		slog.Int("count", len(jokes)))
 	return jokes, nil
 }
 
 func (r *JokesRepository) GetJokeByID(jokeID, currentUserID int64) (models.Joke, error) {
+	r.log.Debug("Fetching joke by ID",
+		slog.Int64("joke_id", jokeID),
+		slog.Int64("current_user_id", currentUserID))
+
 	query := `
         SELECT 
             j.id,
@@ -240,6 +281,13 @@ func (r *JokesRepository) GetJokeByID(jokeID, currentUserID int64) (models.Joke,
 		&authorUsername,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			r.log.Info("Joke not found", slog.Int64("joke_id", jokeID))
+		} else {
+			r.log.Error("Failed to get joke by ID", 
+				sl.Err(err),
+				slog.Int64("joke_id", jokeID))
+		}
 		return joke, err
 	}
 
@@ -278,10 +326,34 @@ func (r *JokesRepository) GetJokeByID(jokeID, currentUserID int64) (models.Joke,
 	}
 
 	joke.AuthorUsername = authorUsername
+	
+	r.log.Debug("Joke retrieved successfully", 
+		slog.Int64("joke_id", jokeID),
+		slog.Int64("author_id", joke.AuthorID),
+		slog.String("author", authorUsername))
 	return joke, nil
 }
 
 func (r *JokesRepository) DeleteJoke(jokeID int64) error {
-	_, err := r.db.Exec("DELETE FROM jokes WHERE id = $1", jokeID)
-	return err
+	r.log.Info("Attempting to delete joke", 
+		slog.Int64("joke_id", jokeID))
+
+	result, err := r.db.Exec("DELETE FROM jokes WHERE id = $1", jokeID)
+	if err != nil {
+		r.log.Error("Failed to delete joke", 
+			sl.Err(err),
+			slog.Int64("joke_id", jokeID))
+		return err
+	}
+	
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		r.log.Info("No joke found to delete", 
+			slog.Int64("joke_id", jokeID))
+	} else {
+		r.log.Info("Joke deleted successfully", 
+			slog.Int64("joke_id", jokeID))
+	}
+	
+	return nil
 }
