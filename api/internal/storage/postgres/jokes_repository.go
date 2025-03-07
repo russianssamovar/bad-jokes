@@ -56,7 +56,7 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 
 	offset := (page - 1) * pageSize
 
-	baseQuery := `
+    baseQuery := `
         SELECT 
             j.id,
             j.body,
@@ -83,11 +83,13 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
                  FROM interactions 
                  WHERE entity_id = j.id AND entity_type = 'joke' AND user_id = $2), 
                 ''
-            ) AS user_reactions
+            ) AS user_reactions,
+            u.username AS author_username
         FROM jokes j
         LEFT JOIN comments c ON j.id = c.joke_id
         LEFT JOIN votes uv ON j.id = uv.entity_id AND uv.entity_type = 'joke' AND uv.user_id = $1
-        GROUP BY j.id, j.body, j.author_id, j.created_at, j.modified_at, uv.vote_type
+        JOIN users u ON j.author_id = u.id
+        GROUP BY j.id, j.body, j.author_id, j.created_at, j.modified_at, uv.vote_type, u.username
     `
 
 	var query string
@@ -173,6 +175,7 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 			&reactionsJSON,
 			&userVote,
 			&userReactions,
+			&joke.AuthorUsername,
 		); err != nil {
 			r.log.Error("Failed to scan joke row", sl.Err(err))
 			return nil, fmt.Errorf("failed to scan joke: %w", err)
