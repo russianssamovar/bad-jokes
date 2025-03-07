@@ -34,16 +34,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize repositories
 	userRepo := storage.NewUserRepository(cfg.Db.Driver, db)
 	jokesRepo := storage.NewJokesRepository(cfg.Db.Driver, db)
+	commentRepo := storage.NewCommentsRepository(cfg.Db.Driver, db)
+	entityRepo := storage.NewEntityRepository(cfg.Db.Driver, db)
 
-	jokesHandler := handlers.NewJokesHandler(jokesRepo)
+	// Initialize handlers
+	jokesHandler := handlers.NewJokesHandler(jokesRepo, commentRepo)
+	commentHandler := handlers.NewCommentHandler(commentRepo)
+	entityHandler := handlers.NewEntityHandler(entityRepo)
 	authHandler := handlers.NewAuthHandler(userRepo, cfg)
 
 	authMiddleware := middleware.NewAuthMiddleware(cfg)
 
 	mux := http.NewServeMux()
-	setupRoutes(mux, jokesHandler, authHandler, authMiddleware)
+	setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, authMiddleware)
 	handler := corsMiddleware(mux)
 
 	listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
@@ -56,7 +62,14 @@ func main() {
 	}
 }
 
-func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHandler *handlers.AuthHandler, authMiddleware *middleware.AuthMiddleware) {
+func setupRoutes(
+	mux *http.ServeMux,
+	jokesHandler *handlers.JokesHandler,
+	commentHandler *handlers.CommentHandler,
+	entityHandler *handlers.EntityHandler,
+	authHandler *handlers.AuthHandler,
+	authMiddleware *middleware.AuthMiddleware,
+) {
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
 
@@ -64,18 +77,17 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 	mux.Handle("/api/jokes", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			jokesHandler.ListJokes(w, r)
+			jokesHandler.List(w, r)
 		case http.MethodPost:
-			jokesHandler.CreateJoke(w, r)
+			jokesHandler.Create(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})))
 
-	// Joke interactions
-	mux.Handle("/api/jokes/vote", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.VoteEntity)))
-	mux.Handle("/api/jokes/react", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
-	mux.Handle("/api/jokes/delete", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.DeleteJoke)))
+	// Entity interactions (votes and reactions)
+	mux.Handle("/api/votes", authMiddleware.Middleware(http.HandlerFunc(entityHandler.Vote)))
+	mux.Handle("/api/reactions", authMiddleware.Middleware(http.HandlerFunc(entityHandler.HandleReaction)))
 
 	// Single joke with comments
 	mux.Handle("/api/jokes/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +108,8 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 			switch r.Method {
 			case http.MethodGet:
 				authMiddleware.Middleware(http.HandlerFunc(jokesHandler.GetJokeWithComments)).ServeHTTP(w, r)
+			case http.MethodDelete:
+				authMiddleware.Middleware(http.HandlerFunc(jokesHandler.DeleteJoke)).ServeHTTP(w, r)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -108,7 +122,7 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 
 			switch r.Method {
 			case http.MethodPost:
-				authMiddleware.Middleware(http.HandlerFunc(jokesHandler.AddComment)).ServeHTTP(w, r)
+				authMiddleware.Middleware(http.HandlerFunc(commentHandler.AddComment)).ServeHTTP(w, r)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -118,21 +132,15 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 		http.Error(w, "Not found", http.StatusNotFound)
 	}))
 
-	// Comments list and create
+	// Comments operations
 	mux.Handle("/api/comments", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			jokesHandler.ListComments(w, r)
-		case http.MethodPost:
-			jokesHandler.AddComment(w, r)
+			commentHandler.ListComments(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})))
-
-	// Comment operations
-	mux.Handle("/api/comments/vote", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.VoteEntity)))
-	mux.Handle("/api/comments/react", authMiddleware.Middleware(http.HandlerFunc(jokesHandler.ReactToEntity)))
 
 	// Comment deletion
 	mux.Handle("/api/comments/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +157,7 @@ func setupRoutes(mux *http.ServeMux, jokesHandler *handlers.JokesHandler, authHa
 
 		switch r.Method {
 		case http.MethodDelete:
-			authMiddleware.Middleware(http.HandlerFunc(jokesHandler.DeleteComment)).ServeHTTP(w, r)
+			authMiddleware.Middleware(http.HandlerFunc(commentHandler.DeleteComment)).ServeHTTP(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

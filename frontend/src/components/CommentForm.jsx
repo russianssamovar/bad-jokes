@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import { addComment } from "../api/commentsApi";
 
 const CommentForm = ({ jokeId, parentId = null, onCommentAdded, isReply = false }) => {

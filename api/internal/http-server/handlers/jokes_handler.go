@@ -11,58 +11,18 @@ import (
 )
 
 type JokesHandler struct {
-	repo storage.JokesRepository
+	jokeRepo    storage.JokesRepository
+	commentRepo storage.CommentsRepository
 }
 
-func NewJokesHandler(repo storage.JokesRepository) *JokesHandler {
-	return &JokesHandler{repo: repo}
+func NewJokesHandler(jokeRepo storage.JokesRepository, commentRepo storage.CommentsRepository) *JokesHandler {
+	return &JokesHandler{
+		jokeRepo:    jokeRepo,
+		commentRepo: commentRepo,
+	}
 }
 
-func (h *JokesHandler) ListJokes(w http.ResponseWriter, r *http.Request) {
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-
-	pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	if err != nil || pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
-
-	sortField := r.URL.Query().Get("sortField")
-	allowedSortFields := map[string]bool{
-		"created_at":      true,
-		"modified_at":     true,
-		"id":              true,
-		"score":           true,
-		"reactions_count": true,
-	}
-
-	if !allowedSortFields[sortField] {
-		sortField = "created_at"
-	}
-
-	order := r.URL.Query().Get("order")
-	if order != "asc" && order != "desc" {
-		order = "desc"
-	}
-
-	var currentUserID int64
-	if userID, ok := r.Context().Value(middleware.UserIDKey).(int64); ok {
-		currentUserID = userID
-	}
-
-	jokesList, err := h.repo.ListPage(page, pageSize, sortField, order, currentUserID)
-	if err != nil {
-		http.Error(w, "Failed to fetch jokes", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(jokesList)
-}
-
-func (h *JokesHandler) CreateJoke(w http.ResponseWriter, r *http.Request) {
+func (h *JokesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Body string `json:"body"`
 	}
@@ -78,7 +38,7 @@ func (h *JokesHandler) CreateJoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.repo.Insert(input.Body, userID)
+	id, err := h.jokeRepo.Insert(input.Body, userID)
 	if err != nil {
 		http.Error(w, "Failed to create joke", http.StatusInternalServerError)
 		return
@@ -88,172 +48,96 @@ func (h *JokesHandler) CreateJoke(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]int64{"id": id})
 }
 
-func (h *JokesHandler) VoteEntity(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		EntityType string `json:"entity_type"`
-		EntityID   int64  `json:"entity_id"`
-		VoteType   string `json:"vote_type"`
-	}
+func (h *JokesHandler) List(w http.ResponseWriter, r *http.Request) {
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("page_size")
+	sortField := r.URL.Query().Get("sort_field")
+	order := r.URL.Query().Get("order")
 
-	userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-
-	if input.VoteType != "plus" && input.VoteType != "minus" {
-		http.Error(w, "Invalid vote type", http.StatusBadRequest)
-		return
-	}
-
-	existingVote, err := h.repo.GetVote(input.EntityType, input.EntityID, userID)
-	if err != nil {
-		http.Error(w, "Failed to check vote", http.StatusInternalServerError)
-		return
-	}
-
-	if existingVote == input.VoteType {
-		if err := h.repo.RemoveVote(input.EntityType, input.EntityID, userID); err != nil {
-			http.Error(w, "Failed to remove vote", http.StatusInternalServerError)
-			return
+	page := 1
+	if pageStr != "" {
+		var err error
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
 		}
-		w.WriteHeader(http.StatusNoContent)
-		return
 	}
 
-	if err := h.repo.AddVote(input.EntityType, input.EntityID, userID, input.VoteType); err != nil {
-		http.Error(w, "Failed to vote", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *JokesHandler) ReactToEntity(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		EntityType   string `json:"entity_type"`
-		EntityID     int64  `json:"entity_id"`
-		ReactionType string `json:"reaction_type"`
-	}
-
-	userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
-
-	validReactions := map[string]bool{
-		"laugh":       true,
-		"heart":       true,
-		"neutral":     true,
-		"surprised":   true,
-		"fire":        true,
-		"poop":        true,
-		"thumbs_up":   true,
-		"thumbs_down": true,
-		"angry":       true,
-		"monkey":      true,
-	}
-
-	if !validReactions[input.ReactionType] {
-		http.Error(w, "Invalid reaction type", http.StatusBadRequest)
-		return
-	}
-
-	existingReaction, err := h.repo.GetReaction(input.EntityType, input.EntityID, userID, input.ReactionType)
-	if err != nil {
-		http.Error(w, "Failed to check reaction", http.StatusInternalServerError)
-		return
-	}
-
-	if existingReaction {
-		if err := h.repo.RemoveReaction(input.EntityType, input.EntityID, userID, input.ReactionType); err != nil {
-			http.Error(w, "Failed to remove reaction", http.StatusInternalServerError)
-			return
+	pageSize := 10
+	if pageSizeStr != "" {
+		var err error
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 || pageSize > 100 {
+			pageSize = 10
 		}
-		w.WriteHeader(http.StatusNoContent)
-		return
 	}
 
-	if err := h.repo.AddReaction(input.EntityType, input.EntityID, userID, input.ReactionType); err != nil {
-		http.Error(w, "Failed to add reaction", http.StatusInternalServerError)
-		return
+	allowedSortFields := map[string]bool{
+		"created_at":      true,
+		"modified_at":     true,
+		"id":              true,
+		"score":           true,
+		"reactions_count": true,
 	}
 
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *JokesHandler) AddComment(w http.ResponseWriter, r *http.Request) {
-    var input struct {
-        Body     string `json:"body"`
-        ParentID *int64 `json:"parent_id"`
-    }
-
-    jokeIDStr, ok := r.Context().Value("jokeId").(string)
-    if !ok {
-        http.Error(w, "Invalid joke ID", http.StatusBadRequest)
-        return
-    }
-
-    jokeID, err := strconv.ParseInt(jokeIDStr, 10, 64)
-    if err != nil {
-        http.Error(w, "Invalid joke ID", http.StatusBadRequest)
-        return
-    }
-
-    userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
-    if !ok {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
-
-    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-        http.Error(w, "Invalid input", http.StatusBadRequest)
-        return
-    }
-
-    id, err := h.repo.AddComment(jokeID, userID, input.Body, input.ParentID)
-    if err != nil {
-        http.Error(w, "Failed to add comment", http.StatusInternalServerError)
-        return
-    }
-
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(map[string]int64{"id": id})
-}
-
-func (h *JokesHandler) ListComments(w http.ResponseWriter, r *http.Request) {
-	jokeIDStr := r.URL.Query().Get("joke_id")
-	jokeID, err := strconv.ParseInt(jokeIDStr, 10, 64)
-	if err != nil || jokeID < 1 {
-		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
-		return
+	if !allowedSortFields[sortField] {
+		sortField = "created_at"
 	}
 
-	comments, err := h.repo.GetComments(jokeID)
+	if order != "asc" && order != "desc" {
+		order = "desc"
+	}
+
+	userID, _ := r.Context().Value(middleware.UserIDKey).(int64)
+
+	jokesList, err := h.jokeRepo.ListPage(page, pageSize, sortField, order, userID)
 	if err != nil {
-		http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch jokes", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(comments)
+	json.NewEncoder(w).Encode(jokesList)
+}
+
+func (h *JokesHandler) GetJoke(w http.ResponseWriter, r *http.Request) {
+	jokeIDStr, ok := r.Context().Value("jokeId").(string)
+	if !ok {
+		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
+		return
+	}
+
+	jokeID, err := strconv.ParseInt(jokeIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, _ := r.Context().Value(middleware.UserIDKey).(int64)
+
+	joke, err := h.jokeRepo.GetJokeByID(jokeID, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Joke not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to get joke", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(joke)
 }
 
 func (h *JokesHandler) DeleteJoke(w http.ResponseWriter, r *http.Request) {
-	jokeIDStr := r.URL.Query().Get("joke_id")
+	jokeIDStr, ok := r.Context().Value("jokeId").(string)
+	if !ok {
+		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
+		return
+	}
+
 	jokeID, err := strconv.ParseInt(jokeIDStr, 10, 64)
-	if err != nil || jokeID < 1 {
+	if err != nil {
 		http.Error(w, "Invalid joke ID", http.StatusBadRequest)
 		return
 	}
@@ -264,9 +148,13 @@ func (h *JokesHandler) DeleteJoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	joke, err := h.repo.GetJokeByID(jokeID, userID)
+	joke, err := h.jokeRepo.GetJokeByID(jokeID, userID)
 	if err != nil {
-		http.Error(w, "Joke not found", http.StatusNotFound)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Joke not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to get joke", http.StatusInternalServerError)
 		return
 	}
 
@@ -275,7 +163,7 @@ func (h *JokesHandler) DeleteJoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.repo.DeleteJoke(jokeID); err != nil {
+	if err := h.jokeRepo.DeleteJoke(jokeID); err != nil {
 		http.Error(w, "Failed to delete joke", http.StatusInternalServerError)
 		return
 	}
@@ -298,7 +186,7 @@ func (h *JokesHandler) GetJokeWithComments(w http.ResponseWriter, r *http.Reques
 
 	userID, _ := r.Context().Value(middleware.UserIDKey).(int64)
 
-	joke, err := h.repo.GetJokeByID(jokeID, userID)
+	joke, err := h.jokeRepo.GetJokeByID(jokeID, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Joke not found", http.StatusNotFound)
@@ -308,7 +196,7 @@ func (h *JokesHandler) GetJokeWithComments(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	comments, err := h.repo.GetCommentsByJokeID(jokeID, userID)
+	comments, err := h.commentRepo.GetCommentsByJokeID(jokeID, userID)
 	if err != nil {
 		http.Error(w, "Failed to get comments", http.StatusInternalServerError)
 		return
@@ -321,46 +209,4 @@ func (h *JokesHandler) GetJokeWithComments(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
-}
-
-func (h *JokesHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
-	commentIDStr, ok := r.Context().Value("commentId").(string)
-	if !ok {
-		http.Error(w, "Invalid comment ID", http.StatusBadRequest)
-		return
-	}
-	
-	commentID, err := strconv.ParseInt(commentIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid comment ID", http.StatusBadRequest)
-		return
-	}
-
-	userID, ok := r.Context().Value(middleware.UserIDKey).(int64)
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	comment, err := h.repo.GetCommentByID(commentID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "Comment not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to fetch comment", http.StatusInternalServerError)
-		}
-		return
-	}
-
-	if comment.AuthorID != userID {
-		http.Error(w, "Forbidden: You can only delete your own comments", http.StatusForbidden)
-		return
-	}
-
-	if err := h.repo.DeleteComment(commentID); err != nil {
-		http.Error(w, "Failed to delete comment", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }

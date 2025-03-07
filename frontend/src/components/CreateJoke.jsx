@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createJoke } from "../api/jokesApi";
 import { getCurrentUser } from "../api/authApi";
 import ReactQuill from "react-quill-new";
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 
 const CreateJoke = () => {
   const [body, setBody] = useState("");
