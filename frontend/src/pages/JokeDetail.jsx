@@ -34,12 +34,24 @@ const JokeDetail = () => {
     }, [jokeId]);
 
     const handleCommentAdded = (newComment) => {
-        setComments(prevComments => [...(prevComments || []), newComment]);
+        setComments(prevComments => [...prevComments, newComment]);
+
+        if (!newComment.parent_id && joke) {
+            setJoke(prevJoke => ({
+                ...prevJoke,
+                comment_count: prevJoke.comment_count + 1
+            }));
+        }
     };
 
     const handleCommentDeleted = (commentId) => {
         setComments((prevComments) =>
-            prevComments.filter((comment) => comment.id !== commentId)
+            prevComments.map(comment => {
+                if (comment.id === commentId) {
+                    return { ...comment, is_deleted: true };
+                }
+                return comment;
+            })
         );
     };
 
@@ -73,6 +85,7 @@ const JokeDetail = () => {
                             <CommentList
                                 comments={comments}
                                 onCommentDeleted={handleCommentDeleted}
+                                onReplyAdded={handleCommentAdded}
                             />
                         ) : (
                             <div className="no-comments">No comments yet. Be the first to comment!</div>

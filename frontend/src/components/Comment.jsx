@@ -6,7 +6,7 @@ import VotingPanel from "./VotingPanel";
 import ReactionsList from "./ReactionsList";
 import CommentForm from "./CommentForm";
 
-const Comment = ({ comment, onCommentDeleted }) => {
+const Comment = ({ comment, onCommentDeleted, onReplyAdded }) => {
     const [showReplyForm, setShowReplyForm] = useState(false);
     const currentUser = getCurrentUser();
     const isAuthor = currentUser?.userId === comment.author_id;
@@ -24,6 +24,14 @@ const Comment = ({ comment, onCommentDeleted }) => {
 
     const toggleReplyForm = () => {
         setShowReplyForm(!showReplyForm);
+    };
+
+    const handleReplyAdded = (newReply) => {
+        setShowReplyForm(false);
+
+        if (newReply && onReplyAdded) {
+            onReplyAdded(newReply);
+        }
     };
 
     return (
@@ -84,7 +92,7 @@ const Comment = ({ comment, onCommentDeleted }) => {
                     <CommentForm
                         jokeId={comment.joke_id}
                         parentId={comment.id}
-                        onCommentAdded={() => setShowReplyForm(false)}
+                        onCommentAdded={handleReplyAdded}
                         isReply
                     />
                 </div>
@@ -97,6 +105,7 @@ const Comment = ({ comment, onCommentDeleted }) => {
                             key={childComment.id}
                             comment={childComment}
                             onCommentDeleted={onCommentDeleted}
+                            onReplyAdded={onReplyAdded}
                         />
                     ))}
                 </div>

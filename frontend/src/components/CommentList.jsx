@@ -1,7 +1,7 @@
 import React from "react";
 import Comment from "./Comment";
 
-const CommentList = ({ comments, onCommentDeleted }) => {
+const CommentList = ({ comments, onCommentDeleted, onReplyAdded }) => {
     const commentMap = {};
     const rootComments = [];
 
@@ -31,6 +31,7 @@ const CommentList = ({ comments, onCommentDeleted }) => {
                     key={comment.id}
                     comment={comment}
                     onCommentDeleted={onCommentDeleted}
+                    onReplyAdded={onReplyAdded}
                 />
             ))}
         </div>

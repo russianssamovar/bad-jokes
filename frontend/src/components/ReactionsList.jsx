@@ -71,21 +71,24 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
     setShowReactionPopup(false);
   };
 
+  // Sort reactions by count (descending)
+  const sortedReactions = Object.entries(reactions)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]);
+
   return (
       <div className="reactions-wrapper">
         <div className="reactions">
-          {Object.entries(reactions)
-              .filter(([_, count]) => count > 0)
-              .map(([reaction, count]) => (
-                  <div
-                      key={reaction}
-                      className={`reaction ${userReactions.has(reaction) ? "active" : ""}`}
-                      onClick={(e) => handleReactionClick(reaction, e)}
-                      ref={el => reactionsRef.current[reaction] = el}
-                  >
-                    {reactionMap[reaction]} <span>{count}</span>
-                  </div>
-              ))}
+          {sortedReactions.map(([reaction, count]) => (
+              <div
+                  key={reaction}
+                  className={`reaction ${userReactions.has(reaction) ? "active" : ""}`}
+                  onClick={(e) => handleReactionClick(reaction, e)}
+                  ref={el => reactionsRef.current[reaction] = el}
+              >
+                {reactionMap[reaction]} <span>{count}</span>
+              </div>
+          ))}
 
           {splashEffect && (
               <div
@@ -93,7 +96,7 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
                   style={{
                     position: "absolute",
                     left: `${reactionsRef.current[splashEffect.reaction]?.offsetLeft + 15}px`,
-                    top: `${reactionsRef.current[splashEffect.reaction]?.top + 15}px`,
+                    top: `${reactionsRef.current[splashEffect.reaction]?.offsetTop + 15}px`,
                   }}
               >
                 {[...Array(8)].map((_, i) => (
@@ -102,8 +105,8 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
                         className={`reaction-splash ${!splashEffect.isAdding ? "removal" : ""}`}
                         data-reaction={splashEffect.reaction}
                     >
-                {reactionMap[splashEffect.reaction]}
-              </span>
+                      {reactionMap[splashEffect.reaction]}
+                    </span>
                 ))}
               </div>
           )}
