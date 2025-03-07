@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import ReactQuill from "react-quill";
+import ReactQuill from "react-quill-new";
 import { addComment } from "../api/commentsApi";
 
 const CommentForm = ({ jokeId, parentId = null, onCommentAdded, isReply = false }) => {

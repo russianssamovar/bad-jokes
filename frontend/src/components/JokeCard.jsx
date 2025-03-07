@@ -35,7 +35,8 @@ const JokeCard = ({ joke, onDelete }) => {
             </div>
 
             <ReactionsList
-                jokeId={joke.id}
+                entityType="joke"
+                entityId={joke.id}
                 initialReactions={joke.social.reactions}
                 initialUserReactions={joke.social?.user?.reactions}
                 isLoggedIn={!!currentUser}

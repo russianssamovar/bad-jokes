@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createJoke } from "../api/jokesApi";
 import { getCurrentUser } from "../api/authApi";
-import ReactQuill from "react-quill";
+import ReactQuill from "react-quill-new";
 import "react-quill/dist/quill.snow.css";
 
 const CreateJoke = () => {
@@ -36,7 +36,7 @@ const CreateJoke = () => {
     toolbar: [
       ["bold", "italic", "underline", "strike"],
       [{ header: 1 }, { header: 2 }],
-      [{ list: "ordered" }, { list: "bullet" }],
+      [{ list: "ordered" }],
       ["link", "blockquote", "code-block", "image"],
       [{ color: [] }, { background: [] }],
       [{ align: [] }],
@@ -47,7 +47,7 @@ const CreateJoke = () => {
   const formats = [
     "bold", "italic", "underline", "strike",
     "header",
-    "list", "bullet",
+    "list",
     "link", "blockquote", "code-block", "image",
     "color", "background",
     "align"

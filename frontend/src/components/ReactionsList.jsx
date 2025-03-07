@@ -8,7 +8,7 @@ const reactionMap = {
 
 const availableReactions = Object.keys(reactionMap);
 
-const ReactionsList = ({ jokeId, initialReactions, initialUserReactions, isLoggedIn }) => {
+const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLoggedIn, entityType }) => {
   const [reactions, setReactions] = useState({ ...initialReactions });
   const [userReactions, setUserReactions] = useState(new Set(initialUserReactions || []));
   const [showReactionPopup, setShowReactionPopup] = useState(false);
@@ -67,7 +67,7 @@ const ReactionsList = ({ jokeId, initialReactions, initialUserReactions, isLogge
       return updatedReactions;
     });
 
-    await reactToEntity("joke", jokeId, reaction);
+    await reactToEntity(entityType, entityId, reaction);
     setShowReactionPopup(false);
   };
 
