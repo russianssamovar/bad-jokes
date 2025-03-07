@@ -12,7 +12,7 @@ const Header = () => {
 
     const handleLogout = () => {
         logoutUser();
-        navigate("/login");
+        navigate("/auth");
     };
 
     return (
@@ -44,7 +44,7 @@ const Header = () => {
                             <button className="header-button" onClick={handleLogout}>Logout</button>
                         </div>
                     ) : (
-                        <Link to="/login" className="header-button">Login</Link>
+                        <Link to="/auth" className="header-button">Login</Link>
                     )}
                 </div>
             </div>

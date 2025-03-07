@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../api/authApi";
 
@@ -7,6 +7,10 @@ const AuthPage = () => {
   const [formData, setFormData] = useState({
     login: { email: "", password: "" },
     register: { email: "", password: "", username: "" }
+  });
+  const [validationErrors, setValidationErrors] = useState({
+    username: [],
+    password: []
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +22,80 @@ const AuthPage = () => {
       [tab]: { ...prev[tab], [field]: value }
     }));
     setError("");
+
+    if (tab === 'register' && (field === 'username' || field === 'password')) {
+      validateField(field, value);
+    }
+  };
+
+  const validateField = (field, value) => {
+    const errors = [];
+
+    if (field === 'username') {
+      if (value.length < 3) {
+        errors.push("Username must be at least 3 characters long");
+      }
+      if (value.length > 20) {
+        errors.push("Username must be at most 20 characters long");
+      }
+      if (value.includes(" ")) {
+        errors.push("Username cannot contain spaces");
+      }
+      if (!/^[a-zA-Z0-9._-]+$/.test(value)) {
+        errors.push("Username can only contain letters, numbers, dots, underscores, and hyphens");
+      }
+
+      const forbiddenWords = ["admin", "administrator", "mod", "moderator", "system", "support",
+        "staff", "official", "root", "superuser"];
+
+      const lowerValue = value.toLowerCase();
+      for (const word of forbiddenWords) {
+        if (lowerValue.includes(word)) {
+          errors.push(`Username cannot contain '${word}'`);
+          break;
+        }
+      }
+    }
+
+    if (field === 'password') {
+      if (value.length < 8) {
+        errors.push("Password must be at least 8 characters long");
+      }
+      if (value.length > 72) {
+        errors.push("Password must be at most 72 characters long");
+      }
+      if (!/[A-Z]/.test(value)) {
+        errors.push("Password must contain an uppercase letter");
+      }
+      if (!/[a-z]/.test(value)) {
+        errors.push("Password must contain a lowercase letter");
+      }
+      if (!/[0-9]/.test(value)) {
+        errors.push("Password must contain a number");
+      }
+      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~]/.test(value)) {
+        errors.push("Password must contain a special character");
+      }
+
+      const commonPasswords = ["password", "123456", "qwerty", "12345678", "111111", "1234567890", "password123", "admin", "welcome", "abc123"];
+      if (commonPasswords.includes(value.toLowerCase())) {
+        errors.push("This password is too common");
+      }
+    }
+
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: errors
+    }));
+
+    return errors.length === 0;
+  };
+
+  const validateForm = () => {
+    const usernameValid = validateField('username', formData.register.username);
+    const passwordValid = validateField('password', formData.register.password);
+
+    return usernameValid && passwordValid;
   };
 
   const handleLogin = async (e) => {
@@ -37,6 +115,12 @@ const AuthPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      setError("Please correct the form errors before submitting");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -48,11 +132,23 @@ const AuthPage = () => {
       localStorage.setItem("token", token);
       navigate("/");
     } catch (err) {
-      setError("Registration failed. Please try again.");
+      // Try to parse error message from response if available
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Registration failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    setValidationErrors({
+      username: [],
+      password: []
+    });
+  }, [activeTab]);
 
   return (
       <div className="auth-container">
@@ -121,6 +217,13 @@ const AuthPage = () => {
                   <label>Username</label>
                   <i className="input-icon">👤</i>
                 </div>
+                {formData.register.username && validationErrors.username.length > 0 && (
+                    <div className="validation-errors">
+                      {validationErrors.username.map((err, index) => (
+                          <div key={index} className="validation-error">{err}</div>
+                      ))}
+                    </div>
+                )}
 
                 <div className="input-group">
                   <input
@@ -143,6 +246,13 @@ const AuthPage = () => {
                   <label>Password</label>
                   <i className="input-icon">🔒</i>
                 </div>
+                {formData.register.password && validationErrors.password.length > 0 && (
+                    <div className="validation-errors">
+                      {validationErrors.password.map((err, index) => (
+                          <div key={index} className="validation-error">{err}</div>
+                      ))}
+                    </div>
+                )}
 
                 <button type="submit" className="auth-button" disabled={isLoading}>
                   {isLoading ? 'Creating account...' : 'Create Account'}

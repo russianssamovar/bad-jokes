@@ -6,9 +6,12 @@ import (
 	"badJokes/internal/storage"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type CommentHandler struct {
@@ -63,6 +66,16 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateCommentContent(input.Body); err != nil {
+		h.log.Warn("Invalid comment content",
+			sl.Err(err),
+			slog.Int64("joke_id", jokeID),
+			slog.Int64("user_id", userID),
+			slog.String("body_length", strconv.Itoa(len(input.Body))))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	h.log.Debug("Adding comment",
 		slog.Int64("joke_id", jokeID),
 		slog.Int64("user_id", userID),
@@ -86,6 +99,51 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]int64{"id": id})
+}
+
+func validateCommentContent(content string) error {
+	if len(strings.TrimSpace(content)) == 0 {
+		return errors.New("comment content cannot be empty")
+	}
+
+	const (
+		minLength = 2
+		maxLength = 1000
+	)
+
+	contentLength := len(content)
+	if contentLength < minLength {
+		return fmt.Errorf("comment content must be at least %d characters", minLength)
+	}
+
+	if contentLength > maxLength {
+		return fmt.Errorf("comment content must be at most %d characters", maxLength)
+	}
+
+	if strings.Contains(strings.ToLower(content), "<script") {
+		return errors.New("comment content cannot contain script tags")
+	}
+
+	dangerousPatterns := []string{
+		"javascript:",
+		"data:text/html",
+		"vbscript:",
+		"onclick=",
+		"onerror=",
+		"onload=",
+		"onmouseover=",
+		"onfocus=",
+		"onblur=",
+	}
+
+	lowercaseContent := strings.ToLower(content)
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(lowercaseContent, pattern) {
+			return fmt.Errorf("comment content cannot contain potentially harmful code: %s", pattern)
+		}
+	}
+
+	return nil
 }
 
 func (h *CommentHandler) ListComments(w http.ResponseWriter, r *http.Request) {

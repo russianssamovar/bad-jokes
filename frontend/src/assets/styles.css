@@ -414,6 +414,17 @@ body {
   color: var(--primary);
 }
 
+.validation-errors {
+  margin-top: -8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.validation-error {
+  color: var(--error);
+  margin-bottom: 4px;
+}
+
 .tab-indicator {
   position: absolute;
   bottom: -2px;
@@ -701,7 +712,6 @@ body {
 
 /* --- CREATE JOKE STYLES --- */
 .create-joke-container {
-  display: flex;
   justify-content: center;
   width: 100%;
   max-width: 800px;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createJoke } from "../api/jokesApi";
 import { getCurrentUser } from "../api/authApi";
 import ReactQuill from "react-quill-new";
@@ -13,7 +13,7 @@ const CreateJoke = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate("/login");
+      navigate("/auth");
     }
   }, [user, navigate]);
 
@@ -55,6 +55,12 @@ const CreateJoke = () => {
 
   return (
       <div className="create-joke-container">
+        <div className="navigation-section">
+          <Link to="/" className="back-link">
+            &larr; Back to jokes
+          </Link>
+        </div>
+
         <div className="create-joke-card">
           <h2>Create a New Joke</h2>
           <div className="editor-container">

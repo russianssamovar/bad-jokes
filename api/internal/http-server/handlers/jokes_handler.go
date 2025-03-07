@@ -7,9 +7,12 @@ import (
 	"badJokes/internal/storage"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type JokesHandler struct {
@@ -48,6 +51,15 @@ func (h *JokesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateJokeContent(input.Body); err != nil {
+		h.log.Warn("Invalid joke content",
+			sl.Err(err),
+			slog.Int64("user_id", userID),
+			slog.String("body_length", strconv.Itoa(len(input.Body))))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	h.log.Debug("Creating joke",
 		slog.Int64("user_id", userID),
 		slog.String("body_length", strconv.Itoa(len(input.Body))))
@@ -67,6 +79,51 @@ func (h *JokesHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]int64{"id": id})
+}
+
+func validateJokeContent(content string) error {
+	if len(strings.TrimSpace(content)) == 0 {
+		return errors.New("joke content cannot be empty")
+	}
+
+	const (
+		minLength = 5
+		maxLength = 10000
+	)
+
+	contentLength := len(content)
+	if contentLength < minLength {
+		return fmt.Errorf("joke content must be at least %d characters", minLength)
+	}
+
+	if contentLength > maxLength {
+		return fmt.Errorf("joke content must be at most %d characters", maxLength)
+	}
+
+	if strings.Contains(strings.ToLower(content), "<script") {
+		return errors.New("joke content cannot contain script tags")
+	}
+
+	dangerousPatterns := []string{
+		"javascript:",
+		"data:text/html",
+		"vbscript:",
+		"onclick=",
+		"onerror=",
+		"onload=",
+		"onmouseover=",
+		"onfocus=",
+		"onblur=",
+	}
+
+	lowercaseContent := strings.ToLower(content)
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(lowercaseContent, pattern) {
+			return fmt.Errorf("joke content cannot contain potentially harmful code: %s", pattern)
+		}
+	}
+
+	return nil
 }
 
 func (h *JokesHandler) List(w http.ResponseWriter, r *http.Request) {
