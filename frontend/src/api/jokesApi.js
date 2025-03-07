@@ -17,7 +17,7 @@ apiClient.interceptors.request.use((config) => {
 
 export const fetchJokes = async ({ pageParam = 1, pageSize = 10, sortField = "created_at", order = "desc" }) => {
   const response = await apiClient.get("", { 
-    params: { page: pageParam, pageSize, sortField, order }
+    params: { page: pageParam, page_size: pageSize, sort_field: sortField, order }
   });
   return response.data;
 };

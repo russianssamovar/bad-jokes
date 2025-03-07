@@ -119,6 +119,12 @@ func (r *JokesRepository) ListPage(page, pageSize int, sortField, order string, 
 		} else {
 			query = baseQuery + " ORDER BY vote_count DESC LIMIT $3 OFFSET $4"
 		}
+    case "comments_count":
+        if order == "asc" {
+            query = baseQuery + " ORDER BY comment_count ASC LIMIT $3 OFFSET $4"
+        } else {
+            query = baseQuery + " ORDER BY comment_count DESC LIMIT $3 OFFSET $4"
+        }
 	case "reactions_count":
 		if order == "asc" {
 			query = baseQuery + ` 

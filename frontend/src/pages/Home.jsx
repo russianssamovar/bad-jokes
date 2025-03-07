@@ -11,8 +11,9 @@ const Home = () => {
     const sortOptions = [
         { label: "Newest", field: "created_at", order: "desc" },
         { label: "Oldest", field: "created_at", order: "asc" },
-        { label: "Most Voted", field: "score", order: "desc" },
-        { label: "Most Reactions", field: "reactions_count", order: "desc" }
+        { label: "Best", field: "score", order: "desc" },
+        { label: "Most Reactions", field: "reactions_count", order: "desc" },
+        { label: "Popular", field: "comments_count", order: "desc" }
     ];
 
     const handleSortChange = (field, order) => {

@@ -107,6 +107,7 @@ func (h *JokesHandler) List(w http.ResponseWriter, r *http.Request) {
 		"id":              true,
 		"score":           true,
 		"reactions_count": true,
+		"comments_count":  true,
 	}
 
 	if !allowedSortFields[sortField] {
