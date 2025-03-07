@@ -70,6 +70,7 @@ const CreateJoke = () => {
     body: body,
     author_id: user?.userId,
     author_username: user?.username,
+    created_at: new Date().toISOString(),
     comment_count: 0,
     social: {
       pluses: 0,
