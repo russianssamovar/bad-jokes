@@ -31,8 +31,8 @@ const CreateJoke = () => {
   const confirmSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await createJoke(body);
-      navigate("/");
+      const response = await createJoke(body);
+      navigate(`/joke/${response.id}`);
     } catch (error) {
       console.error("Failed to create joke:", error);
     } finally {
