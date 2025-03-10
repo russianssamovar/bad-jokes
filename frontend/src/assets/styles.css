@@ -1377,7 +1377,6 @@ body {
     position: fixed;
     bottom: 20px;
     left: 50%;
-    transform: translateX(-50%);
     width: 90%;
     max-width: 350px;
     display: grid;
