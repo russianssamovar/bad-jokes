@@ -44,9 +44,7 @@ export const createJoke = async (body) => {
 };
 
 export const deleteJoke = async (jokeId) => {
-  await apiClient.delete(`/delete`, {
-    params: { joke_id: jokeId }
-  });
+  await apiClient.delete(`/${jokeId}`);
 };
 
 export const addComment = async (jokeId, body) => {
@@ -58,9 +56,7 @@ export const addComment = async (jokeId, body) => {
 };
 
 export const fetchComments = async (jokeId) => {
-  const response = await apiClient.get(`/comments`, {
-    params: { joke_id: jokeId }
-  });
+  const response = await apiClient.get(`/${jokeId}/comments`);
   return response.data;
 };
 

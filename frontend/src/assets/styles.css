@@ -1036,7 +1036,7 @@ body {
   }
 
   .create-button {
-    width: 100%;
+    width: 100px;
     justify-content: center;
   }
 }
@@ -1195,4 +1195,205 @@ body {
 .deleted-comment {
   color: #888;
   font-style: italic;
+}
+
+
+/* --- MOBILE OPTIMIZATIONS --- */
+
+/* General adjustments */
+@media (max-width: 576px) {
+  body {
+    padding-top: 60px;
+  }
+
+  .home-container, .joke-detail-container, .create-joke-container {
+    padding: 10px;
+    width: 100%;
+  }
+
+  .create-joke-container {
+    max-width: 100%;
+  }
+}
+
+/* Joke Card Optimizations */
+@media (max-width: 576px) {
+  .joke-card {
+    padding: 12px;
+  }
+
+  .joke-header {
+    margin-bottom: 8px;
+  }
+
+  .user-info {
+    gap: 6px;
+  }
+
+  .joke-text {
+    font-size: 15px;
+  }
+
+  .reactions {
+    gap: 6px;
+  }
+
+  .reaction {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+
+  .bottom-panel {
+    margin-top: 8px;
+  }
+}
+
+/* Comment Section Optimizations */
+@media (max-width: 576px) {
+  .comments-section {
+    padding: 15px;
+  }
+
+  .comment {
+    padding: 12px;
+  }
+
+  .nested-comments {
+    margin-left: 10px;
+    padding-left: 10px;
+  }
+
+  .comment-body {
+    font-size: 14px;
+  }
+}
+
+/* Header Optimizations */
+@media (max-width: 576px) {
+  .header-container {
+    height: 55px;
+  }
+
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .username {
+    display: none;
+  }
+
+  .header-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Create Joke Form Optimizations */
+@media (max-width: 576px) {
+  .create-joke-card {
+    padding: 15px;
+  }
+
+  .create-joke-card h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .editor-container .ql-editor {
+    min-height: 120px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+/* Sorting and Navigation */
+@media (max-width: 576px) {
+  .sorting-panel {
+    padding: 10px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sort-buttons {
+    width: 100%;
+  }
+
+  .sort-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .create-button {
+    width: 100%;
+  }
+}
+
+/* Fix reaction popup on mobile */
+@media (max-width: 576px) {
+  .reaction-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 350px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .reaction-option {
+    width: 100%;
+    height: 40px;
+  }
+}
+
+/* Auth form optimization */
+@media (max-width: 576px) {
+  .auth-card {
+    width: 100%;
+    padding: 20px 15px;
+  }
+
+  .auth-tabs {
+    margin-bottom: 20px;
+  }
+
+  .auth-tab {
+    padding: 10px 0;
+    font-size: 15px;
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  .input-group input {
+    padding: 10px 30px 10px 12px;
+    font-size: 15px;
+  }
+}
+
+/* Fix landscape orientation issues */
+@media (max-height: 450px) and (orientation: landscape) {
+  body {
+    padding-top: 55px;
+  }
+
+  .header {
+    height: 55px;
+  }
+
+  .create-joke-card, .auth-card {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
 }
