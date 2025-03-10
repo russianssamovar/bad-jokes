@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { reactToEntity } from "../api/jokesApi";
+import Popup from "./Popup";
+
 
 const reactionMap = {
   laugh: "😂", heart: "❤️", neutral: "😐", surprised: "😲", fire: "🔥",
@@ -13,6 +16,8 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
   const [userReactions, setUserReactions] = useState(new Set(initialUserReactions || []));
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [splashEffect, setSplashEffect] = useState(null);
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const navigate = useNavigate();
   const popupRef = useRef(null);
   const addButtonRef = useRef(null);
   const reactionsRef = useRef({});
@@ -37,7 +42,10 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
   }, [showReactionPopup]);
 
   const handleReactionClick = async (reaction, event) => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn) {
+      setShowAuthPopup(true);
+      return;
+    }
 
     const isAddingReaction = !userReactions.has(reaction);
 
@@ -71,77 +79,94 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
     setShowReactionPopup(false);
   };
 
+  const handleAuthConfirm = () => {
+    navigate("/auth");
+    setShowAuthPopup(false);
+  };
+  
   // Sort reactions by count (descending)
   const sortedReactions = Object.entries(reactions)
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1]);
 
   return (
-      <div className="reactions-wrapper">
-        <div className="reactions">
-          {sortedReactions.map(([reaction, count]) => (
-              <div
-                  key={reaction}
-                  className={`reaction ${userReactions.has(reaction) ? "active" : ""}`}
-                  onClick={(e) => handleReactionClick(reaction, e)}
-                  ref={el => reactionsRef.current[reaction] = el}
-              >
-                {reactionMap[reaction]} <span>{count}</span>
-              </div>
-          ))}
+      <>
+        <div className="reactions-wrapper">
+          <div className="reactions">
+            {sortedReactions.map(([reaction, count]) => (
+                <div
+                    key={reaction}
+                    className={`reaction ${userReactions.has(reaction) ? "active" : ""}`}
+                    onClick={(e) => handleReactionClick(reaction, e)}
+                    ref={el => reactionsRef.current[reaction] = el}
+                >
+                  {reactionMap[reaction]} <span>{count}</span>
+                </div>
+            ))}
 
-          {splashEffect && (
-              <div
-                  className="reaction-splash-container"
-                  style={{
-                    position: "absolute",
-                    left: `${reactionsRef.current[splashEffect.reaction]?.offsetLeft + 15}px`,
-                    top: `${reactionsRef.current[splashEffect.reaction]?.offsetTop + 15}px`,
-                  }}
-              >
-                {[...Array(8)].map((_, i) => (
-                    <span
-                        key={i}
-                        className={`reaction-splash ${!splashEffect.isAdding ? "removal" : ""}`}
-                        data-reaction={splashEffect.reaction}
-                    >
+            {splashEffect && (
+                <div
+                    className="reaction-splash-container"
+                    style={{
+                      position: "absolute",
+                      left: `${reactionsRef.current[splashEffect.reaction]?.offsetLeft + 15}px`,
+                      top: `${reactionsRef.current[splashEffect.reaction]?.offsetTop + 15}px`,
+                    }}
+                >
+                  {[...Array(8)].map((_, i) => (
+                      <span
+                          key={i}
+                          className={`reaction-splash ${!splashEffect.isAdding ? "removal" : ""}`}
+                          data-reaction={splashEffect.reaction}
+                      >
                       {reactionMap[splashEffect.reaction]}
                     </span>
+                  ))}
+                </div>
+            )}
+
+            <div
+                className="reaction add-reaction"
+                ref={addButtonRef}
+                onClick={() => isLoggedIn && setShowReactionPopup(!showReactionPopup)}
+            >
+              ➕
+            </div>
+          </div>
+
+          {showReactionPopup && addButtonRef.current && (
+              <div
+                  className="reaction-popup"
+                  ref={popupRef}
+                  style={{
+                    position: "absolute",
+                    left: addButtonRef.current.offsetLeft,
+                    top: addButtonRef.current.getBoundingClientRect().bottom.toFixed(),
+                  }}
+              >
+                {availableReactions.map((reaction) => (
+                    <div
+                        key={reaction}
+                        className={`reaction-option ${userReactions.has(reaction) ? "active" : ""}`}
+                        onClick={(e) => handleReactionClick(reaction, e)}
+                    >
+                      {reactionMap[reaction]}
+                    </div>
                 ))}
               </div>
           )}
-
-          <div
-              className="reaction add-reaction"
-              ref={addButtonRef}
-              onClick={() => isLoggedIn && setShowReactionPopup(!showReactionPopup)}
-          >
-            ➕
-          </div>
         </div>
-
-        {showReactionPopup && addButtonRef.current && (
-            <div
-                className="reaction-popup"
-                ref={popupRef}
-                style={{
-                  position: "absolute",
-                  left: addButtonRef.current.offsetLeft,
-                  top: addButtonRef.current.getBoundingClientRect().bottom.toFixed(),
-                }}
-            >
-              {availableReactions.map((reaction) => (
-                  <div
-                      key={reaction}
-                      className={`reaction-option ${userReactions.has(reaction) ? "active" : ""}`}
-                      onClick={(e) => handleReactionClick(reaction, e)}
-                  >
-                    {reactionMap[reaction]}
-                  </div>
-              ))}
-            </div>
-        )}
-      </div>
+        <Popup
+            isOpen={showAuthPopup}
+            title="Sign In Required"
+            message="You need to sign in or create an account to react to jokes."
+            onConfirm={handleAuthConfirm}
+            onCancel={() => setShowAuthPopup(false)}
+            confirmText="Sign In"
+            cancelText="Not Now"
+            type="auth"
+        />
+      </>
   );
 };
 

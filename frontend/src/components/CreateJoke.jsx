@@ -5,11 +5,13 @@ import { getCurrentUser } from "../api/authApi";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import JokeCard from "./JokeCard";
+import Popup from "./Popup";
 
 const CreateJoke = () => {
   const [body, setBody] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showSubmitPopup, setShowSubmitPopup] = useState(false);
   const navigate = useNavigate();
   const user = getCurrentUser();
 
@@ -19,21 +21,26 @@ const CreateJoke = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (body.trim() && !isSubmitting) {
-      setIsSubmitting(true);
-      try {
-        await createJoke(body);
-        navigate("/");
-      } catch (error) {
-        console.error("Failed to create joke:", error);
-      } finally {
-        setIsSubmitting(false);
-      }
+      setShowSubmitPopup(true);
     }
   };
 
+  const confirmSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await createJoke(body);
+      navigate("/");
+    } catch (error) {
+      console.error("Failed to create joke:", error);
+    } finally {
+      setIsSubmitting(false);
+      setShowSubmitPopup(false);
+    }
+  };
+  
   const togglePreview = () => {
     setShowPreview(!showPreview);
   };
@@ -81,51 +88,64 @@ const CreateJoke = () => {
   };
 
   return (
-      <div className="create-joke-container">
-        <div className="navigation-section">
-          <Link to="/" className="back-link">
-            &larr; Back to jokes
-          </Link>
-        </div>
+      <>
+        <div className="create-joke-container">
+          <div className="navigation-section">
+            <Link to="/" className="back-link">
+              &larr; Back to jokes
+            </Link>
+          </div>
 
-        <div className="create-joke-card">
-          <h2>{showPreview ? "Preview Your Joke" : "Create a New Joke"}</h2>
+          <div className="create-joke-card">
+            <h2>{showPreview ? "Preview Your Joke" : "Create a New Joke"}</h2>
 
-          {!showPreview ? (
-              <div className="editor-container">
-                <ReactQuill
-                    theme="snow"
-                    value={body}
-                    onChange={setBody}
-                    modules={modules}
-                    formats={formats}
-                    placeholder="Write your joke here..."
-                />
-              </div>
-          ) : (
-              <div className="joke-list-container">
-                <JokeCard joke={previewJoke} />
-              </div>
-          )}
+            {!showPreview ? (
+                <div className="editor-container">
+                  <ReactQuill
+                      theme="snow"
+                      value={body}
+                      onChange={setBody}
+                      modules={modules}
+                      formats={formats}
+                      placeholder="Write your joke here..."
+                  />
+                </div>
+            ) : (
+                <div className="joke-list-container">
+                  <JokeCard joke={previewJoke}/>
+                </div>
+            )}
 
-          <div className="form-actions">
-            <button
-                className={`sort-button ${showPreview ? 'active' : ''}`}
-                onClick={togglePreview}
-                disabled={isContentEmpty(body)}
-            >
-              {showPreview ? "Edit" : "Preview"}
-            </button>
-            <button
-                className="submit-button"
-                onClick={handleSubmit}
-                disabled={isContentEmpty(body) || isSubmitting}
-            >
-              {isSubmitting ? "Posting..." : "Post Joke"}
-            </button>
+            <div className="form-actions">
+              <button
+                  className={`sort-button ${showPreview ? 'active' : ''}`}
+                  onClick={togglePreview}
+                  disabled={isContentEmpty(body)}
+              >
+                {showPreview ? "Edit" : "Preview"}
+              </button>
+              <button
+                  className="submit-button"
+                  onClick={handleSubmit}
+                  disabled={isContentEmpty(body) || isSubmitting}
+              >
+                {isSubmitting ? "Posting..." : "Post Joke"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+        
+        <Popup
+            isOpen={showSubmitPopup}
+            title="Publish Joke"
+            message="Are you ready to share this joke with the world?"
+            onConfirm={confirmSubmit}
+            onCancel={() => setShowSubmitPopup(false)}
+            confirmText="Publish"
+            cancelText="Not yet"
+            type="warning"
+        />
+      </>
   );
 };
 
