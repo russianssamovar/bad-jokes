@@ -40,6 +40,7 @@ const CommentForm = ({ jokeId, parentId = null, onCommentAdded, isReply = false 
             const formattedComment = {
                 ...newCommentData,
                 body: body,
+                joke_id: jokeId,
                 parent_id: parentId,
                 author_username: currentUser.username,
                 author_id: currentUser.userId,

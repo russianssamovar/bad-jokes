@@ -9,7 +9,7 @@ import { getCurrentUser } from "../api/authApi";
 const JokeDetail = () => {
     const { jokeId } = useParams();
     const [joke, setJoke] = useState(null);
-    const [comments, setComments] = useState([]);
+    const [comments, setComments] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const currentUser = getCurrentUser();
@@ -20,7 +20,7 @@ const JokeDetail = () => {
                 setLoading(true);
                 const data = await fetchJokeWithComments(jokeId);
                 setJoke(data.joke);
-                setComments(data.comments);
+                setComments(Array.isArray(data.comments) ? data.comments : []);
                 setError(null);
             } catch (err) {
                 setError("Failed to load joke and comments");
@@ -34,7 +34,10 @@ const JokeDetail = () => {
     }, [jokeId]);
 
     const handleCommentAdded = (newComment) => {
-        setComments(prevComments => [...prevComments, newComment]);
+        setComments(prevComments => {
+            const commentsArray = Array.isArray(prevComments) ? prevComments : [];
+            return [...commentsArray, newComment];
+        });
 
         if (!newComment.parent_id && joke) {
             setJoke(prevJoke => ({
@@ -45,14 +48,16 @@ const JokeDetail = () => {
     };
 
     const handleCommentDeleted = (commentId) => {
-        setComments((prevComments) =>
-            prevComments.map(comment => {
+        setComments((prevComments) => {
+            if (!Array.isArray(prevComments)) return [];
+
+            return prevComments.map(comment => {
                 if (comment.id === commentId) {
                     return { ...comment, is_deleted: true };
                 }
                 return comment;
-            })
-        );
+            });
+        });
     };
 
     return (
