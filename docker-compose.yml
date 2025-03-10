@@ -30,8 +30,6 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        VITE_API_URL: "${BACKEND_URL}" 
     ports:
       - "8080:80"
 
