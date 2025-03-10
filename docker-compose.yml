@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
 
@@ -22,12 +24,14 @@ services:
       HTTP_SERVER_TIMEOUT: "4s"
       HTTP_SERVER_IDLE_TIMEOUT: "60s"
       JWT_SECRET: "${JWT_SECRET_KEY}"
+    ports:
+      - "127.0.0.1:9999:9999"
 
   frontend:
     build:
       context: ./frontend
     ports:
-      - "8080:80"
+      - "127.0.0.1:9999:9999"
 
 volumes:
   db_data: 
