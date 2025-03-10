@@ -842,12 +842,6 @@ body {
   font-size: 14px;
 }
 
-.joke-list-container {
-  margin: 0 auto 20px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -1013,6 +1007,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  margin: 0 auto 20px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .load-more-trigger {
@@ -1033,6 +1030,8 @@ body {
   }
 
   .sort-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
     width: 100%;
   }
 
@@ -1207,7 +1206,7 @@ body {
   }
 
   .home-container, .joke-detail-container, .create-joke-container {
-    padding: 0px;
+    padding: 10px;
     width: 100%;
   }
 
@@ -1225,7 +1224,8 @@ body {
   }
 
   .sort-buttons {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 6px;
     overflow-x: auto;
     width: calc(100% - 35px); /* Give space for create button */
@@ -1247,8 +1247,12 @@ body {
 
 /* Joke Card Optimizations */
 @media (max-width: 576px) {
+  .html, body {
+    overflow-x: hidden;
+  }
+  
   .joke-card {
-    padding: 0px;
+    padding: 10px;
   }
 
   .joke-header {
