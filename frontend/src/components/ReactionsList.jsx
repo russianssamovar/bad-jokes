@@ -79,6 +79,15 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
     setShowReactionPopup(false);
   };
 
+  const handleAddReactionClick = async () => {
+    if (!isLoggedIn) {
+      setShowAuthPopup(true);
+      return;
+    }
+    
+    setShowReactionPopup(!showReactionPopup);
+  };
+  
   const handleAuthConfirm = () => {
     navigate("/auth");
     setShowAuthPopup(false);
@@ -128,7 +137,7 @@ const ReactionsList = ({ entityId, initialReactions, initialUserReactions, isLog
             <div
                 className="reaction add-reaction"
                 ref={addButtonRef}
-                onClick={() => isLoggedIn && setShowReactionPopup(!showReactionPopup)}
+                onClick={() => handleAddReactionClick()}
             >
               ➕
             </div>
