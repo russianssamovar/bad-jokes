@@ -19,48 +19,49 @@ import (
 )
 
 func main() {
-    cfg := config.MustLoad()
-    log := setupLogger(cfg.Env)
+	cfg := config.MustLoad()
+	log := setupLogger(cfg.Env)
 
-    log.Info("Starting application", slog.String("env", cfg.Env))
+	log.Info("Starting application", slog.String("env", cfg.Env))
 
-    db, err := sql.Open(cfg.Db.Driver, cfg.Db.ConnectionString)
-    if err != nil {
-        log.Error("Failed to connect to database", sl.Err(err))
-        os.Exit(1)
-    }
-    defer db.Close()
+	db, err := sql.Open(cfg.Db.Driver, cfg.Db.ConnectionString)
+	if err != nil {
+		log.Error("Failed to connect to database", sl.Err(err))
+		os.Exit(1)
+	}
+	defer db.Close()
 
-    if err := storage.Migrate(db, "storage/migrations"); err != nil {
-        log.Error("Failed to run migrations", sl.Err(err))
-        os.Exit(1)
-    }
-    log.Info("Database migrations completed successfully")
+	if err := storage.Migrate(db, "storage/migrations"); err != nil {
+		log.Error("Failed to run migrations", sl.Err(err))
+		os.Exit(1)
+	}
+	log.Info("Database migrations completed successfully")
 
-    userRepo := storage.NewUserRepository(cfg.Db.Driver, db, log)
-    jokesRepo := storage.NewJokesRepository(cfg.Db.Driver, db, log)
-    commentRepo := storage.NewCommentsRepository(cfg.Db.Driver, db, log)
-    entityRepo := storage.NewEntityRepository(cfg.Db.Driver, db, log)
+	userRepo := storage.NewUserRepository(cfg.Db.Driver, db, log)
+	jokesRepo := storage.NewJokesRepository(cfg.Db.Driver, db, log)
+	commentRepo := storage.NewCommentsRepository(cfg.Db.Driver, db, log)
+	entityRepo := storage.NewEntityRepository(cfg.Db.Driver, db, log)
 
-    jokesHandler := handlers.NewJokesHandler(jokesRepo, commentRepo, log)
-    commentHandler := handlers.NewCommentHandler(commentRepo, log)
-    entityHandler := handlers.NewEntityHandler(entityRepo, log)
-    authHandler := handlers.NewAuthHandler(userRepo, cfg, log)
+	jokesHandler := handlers.NewJokesHandler(jokesRepo, commentRepo, log)
+	commentHandler := handlers.NewCommentHandler(commentRepo, log)
+	entityHandler := handlers.NewEntityHandler(entityRepo, log)
+	authHandler := handlers.NewAuthHandler(userRepo, cfg, log)
+	adminHandler := handlers.NewAdminHandler(userRepo, jokesRepo, commentRepo, log)
 
-    authMiddleware := middleware.NewAuthMiddleware(cfg)
+	authMiddleware := middleware.NewAuthMiddleware(cfg, log)
 
-    mux := http.NewServeMux()
-    setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, authMiddleware)
-    handler := corsMiddleware(mux)
+	mux := http.NewServeMux()
+	setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, adminHandler, authMiddleware)
+	handler := corsMiddleware(mux)
 
-    listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
-    flag.Parse()
+	listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
+	flag.Parse()
 
-    log.Info("Server started", slog.String("address", cfg.HTTPServer.Address))
-    if err := http.ListenAndServe(*listenAddr, handler); err != nil {
-        log.Error("Failed to start server", sl.Err(err))
-        os.Exit(1)
-    }
+	log.Info("Server started", slog.String("address", cfg.HTTPServer.Address))
+	if err := http.ListenAndServe(*listenAddr, handler); err != nil {
+		log.Error("Failed to start server", sl.Err(err))
+		os.Exit(1)
+	}
 }
 
 func setupRoutes(
@@ -69,6 +70,7 @@ func setupRoutes(
 	commentHandler *handlers.CommentHandler,
 	entityHandler *handlers.EntityHandler,
 	authHandler *handlers.AuthHandler,
+	adminHandler *handlers.AdminHandler,
 	authMiddleware *middleware.AuthMiddleware,
 ) {
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
@@ -88,7 +90,7 @@ func setupRoutes(
 
 	mux.Handle("/api/votes", authMiddleware.Middleware(http.HandlerFunc(entityHandler.Vote)))
 	mux.Handle("/api/reactions", authMiddleware.Middleware(http.HandlerFunc(entityHandler.HandleReaction)))
-	
+
 	mux.Handle("/api/jokes/react", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			entityHandler.HandleReaction(w, r)
@@ -173,6 +175,69 @@ func setupRoutes(
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	}))
+
+	mux.Handle("/api/admin/users", authMiddleware.Middleware(
+		authMiddleware.RequireAdmin(http.HandlerFunc(adminHandler.GetUsers)),
+	))
+
+	mux.Handle("/api/admin/jokes/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		pathSegments := strings.Split(strings.TrimPrefix(path, "/api/admin/jokes/"), "/")
+
+		if len(pathSegments) != 1 || pathSegments[0] == "" {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+
+		jokeID := pathSegments[0]
+		r = r.WithContext(context.WithValue(r.Context(), "jokeId", jokeID))
+
+		switch r.Method {
+		case http.MethodDelete:
+			authMiddleware.Middleware(
+				authMiddleware.RequireAdmin(http.HandlerFunc(adminHandler.DeleteJoke)),
+			).ServeHTTP(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
+	mux.Handle("/api/admin/comments/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		pathSegments := strings.Split(strings.TrimPrefix(path, "/api/admin/comments/"), "/")
+
+		if len(pathSegments) != 1 || pathSegments[0] == "" {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+
+		commentID := pathSegments[0]
+		r = r.WithContext(context.WithValue(r.Context(), "commentId", commentID))
+
+		switch r.Method {
+		case http.MethodDelete:
+			authMiddleware.Middleware(
+				authMiddleware.RequireAdmin(http.HandlerFunc(adminHandler.DeleteComment)),
+			).ServeHTTP(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
+	mux.Handle("/api/admin/users/set-status", authMiddleware.RequireAdmin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			adminHandler.SetUserAdminStatus(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	mux.Handle("/api/admin/logs", authMiddleware.Middleware(
+		authMiddleware.RequireAdmin(http.HandlerFunc(adminHandler.GetModLogs)),
+	))
+	mux.Handle("/api/admin/stats", authMiddleware.Middleware(
+		authMiddleware.RequireAdmin(http.HandlerFunc(adminHandler.GetUserStats)),
+	))
 }
 
 func corsMiddleware(next http.Handler) http.Handler {

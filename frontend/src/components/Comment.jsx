@@ -6,12 +6,14 @@ import VotingPanel from "./VotingPanel";
 import ReactionsList from "./ReactionsList";
 import CommentForm from "./CommentForm";
 import Popup from "./Popup";
+import {deleteAsAdminComment} from "../api/adminApi.js";
 
 const Comment = ({ comment, onCommentDeleted, onReplyAdded }) => {
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const currentUser = getCurrentUser();
     const isAuthor = currentUser?.userId === comment.author_id;
+    const isAdmin = currentUser?.isAdmin;
 
     const handleDelete = () => {
         setShowDeletePopup(true);
@@ -19,7 +21,12 @@ const Comment = ({ comment, onCommentDeleted, onReplyAdded }) => {
     
     const confirmDelete = async () => {
         try {
-            await deleteComment(comment.id);
+            if (isAdmin) {
+                await deleteAsAdminComment(comment.id);
+            }
+            else {
+                await deleteComment(comment.id);
+            }
             onCommentDeleted(comment.id);
             setShowDeletePopup(false);
         } catch (error) {
@@ -77,7 +84,7 @@ const Comment = ({ comment, onCommentDeleted, onReplyAdded }) => {
                                 </button>
                             )}
 
-                            {isAuthor && (
+                            {(isAuthor || isAdmin) && (
                                 <button className="delete-button" onClick={handleDelete}>
                                     Delete
                                 </button>

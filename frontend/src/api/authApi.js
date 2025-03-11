@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_API_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.host}/api`;
+const BASE_API_URL = import.meta.env.VITE_API_URL || "http://localhost:9999/api";
 const API_URL = `${BASE_API_URL}/auth`;
 
 export const registerUser = async (username, email, password) => {
@@ -24,7 +24,7 @@ export const getCurrentUser = () => {
     const payload = JSON.parse(atob(parts[1]));
     if (!payload || !payload.user_id || !payload.username) return null;
 
-    return { userId: payload.user_id, username: payload.username, token };
+    return { userId: payload.user_id, username: payload.username, isAdmin: payload.is_admin, token };
   } catch (error) {
     console.error("Error parsing user token:", error);
     localStorage.removeItem("token");

@@ -3,7 +3,7 @@ import JokeCard from "./JokeCard";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 
 const JokeList = ({ sortParams }) => {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteScroll(sortParams);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteScroll(sortParams);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -19,11 +19,21 @@ const JokeList = ({ sortParams }) => {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, data]);
 
+  const handleJokeDelete = (deletedJokeId) => {
+    refetch();
+  };
+
   return (
       <div className="joke-list-container">
         {data?.pages
             ? data.pages.map((page) =>
-                page ? page.map((joke) => <JokeCard key={joke.id} joke={joke} />) : null
+                page ? page.map((joke) => (
+                    <JokeCard
+                        key={joke.id}
+                        joke={joke}
+                        onDelete={handleJokeDelete}
+                    />
+                )) : null
             )
             : null}
         <div ref={bottomRef} className="load-more-trigger"></div>

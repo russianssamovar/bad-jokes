@@ -138,6 +138,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":  user.ID,
 		"username": user.Username,
+		"is_admin": user.IsAdmin,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 

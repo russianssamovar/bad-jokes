@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { deleteJoke } from "../api/jokesApi";
+import { deleteAsAdminJoke } from "../api/adminApi";
 import { getCurrentUser } from "../api/authApi";
 import ReactionsList from "./ReactionsList";
 import VotingPanel from "./VotingPanel";
@@ -10,6 +11,7 @@ import Popup from "./Popup";
 const JokeCard = ({ joke, onDelete }) => {
     const currentUser = getCurrentUser();
     const isAuthor = currentUser?.userId === joke.author_id;
+    const isAdmin = currentUser?.isAdmin;
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     
     const getInitials = (username) => {
@@ -21,7 +23,13 @@ const JokeCard = ({ joke, onDelete }) => {
     };
 
     const confirmDelete = async () => {
-        await deleteJoke(joke.id);
+        if (isAdmin){
+            await deleteAsAdminJoke(joke.id);
+        }
+        else {
+            await deleteJoke(joke.id);
+        }
+        
         if (onDelete) onDelete(joke.id);
         setShowDeletePopup(false);
     };
@@ -40,7 +48,7 @@ const JokeCard = ({ joke, onDelete }) => {
                         <span className="comment-time">
                             {joke.created_at && formatDistanceToNow(new Date(joke.created_at))} ago
                         </span>
-                        {isAuthor && (
+                        {(isAuthor || isAdmin) && (
                             <button className="delete-button" onClick={handleDelete}>
                                 <svg width="18" height="18" viewBox="0 0 24 24">
                                     <line x1="4" y1="4" x2="20" y2="20" stroke="black" strokeWidth="2"/>
