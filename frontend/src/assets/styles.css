@@ -1535,3 +1535,12 @@ body {
     width: 100%;
   }
 }
+
+.heart-animation-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}

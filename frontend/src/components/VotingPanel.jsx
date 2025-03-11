@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { voteEntity } from "../api/jokesApi";
 import { getCurrentUser } from "../api/authApi";
 import Popup from "./Popup";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import Lottie from 'lottie-react';
+import heartAnimation from '../assets/heart-animation.json';
 
 const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
   const currentUser = getCurrentUser();
@@ -12,8 +14,10 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
   const [hasVoted, setHasVoted] = useState(initialVote || null);
   const [showEffect, setShowEffect] = useState(null);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const [playHeartAnimation, setPlayHeartAnimation] = useState(false);
+  const heartRef = useRef(null);
   const navigate = useNavigate();
-  
+
   const handleVote = async (voteType) => {
     if (!isLoggedIn) {
       setShowAuthPopup(true);
@@ -21,6 +25,12 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
     }
 
     setShowEffect(voteType);
+
+    if (voteType === "plus" && (hasVoted !== "plus")) {
+      setPlayHeartAnimation(true);
+      setTimeout(() => setPlayHeartAnimation(false), 1000);
+    }
+
     setTimeout(() => setShowEffect(null), 500);
 
     const currentVote = hasVoted;
@@ -50,7 +60,7 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
     navigate("/auth");
     setShowAuthPopup(false);
   };
-  
+
   return (
       <>
         <div className="voting-panel">
@@ -83,8 +93,27 @@ const VotingPanel = ({ entityType, entityId, initialScore, initialVote }) => {
                 </div>
             )}
           </button>
+
+          {playHeartAnimation && (
+              <div className="heart-animation-container">
+                <Lottie
+                    animationData={heartAnimation}
+                    loop={false}
+                    autoplay={true}
+                    ref={heartRef}
+                    style={{
+                      position: 'absolute',
+                      width: '50px',
+                      height: '50px',
+                      top: '-10px',
+                      left: '-55px',
+                      pointerEvents: 'none'
+                    }}
+                />
+              </div>
+          )}
         </div>
-        
+
         <Popup
             isOpen={showAuthPopup}
             title="Sign In Required"
