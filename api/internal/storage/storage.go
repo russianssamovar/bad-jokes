@@ -16,6 +16,7 @@ type UserRepository interface {
 	SetAdminStatus(userID int64, isAdmin bool) error
 	GetModerationLogs(page, pageSize int) ([]*models.ModerationLog, error)
 	GetUserStats() (*models.UserStats, error)
+	FindOrCreateOAuthUser(email, username, provider, providerID string) (*models.User, error)
 }
 
 type JokesRepository interface {

@@ -3,8 +3,13 @@ module badJokes
 go 1.23.2
 
 require (
-	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.1
+	golang.org/x/oauth2 v0.28.0
+)
+
+require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/ilyakaznacheev/cleanenv v1.5.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect

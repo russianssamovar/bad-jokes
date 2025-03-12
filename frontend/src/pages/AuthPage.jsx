@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../api/authApi";
+import OAuthButtons from "../components/OAuthButtons.jsx";
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
@@ -173,7 +174,9 @@ const AuthPage = () => {
             </button>
             <div className="tab-indicator" style={{ left: activeTab === 'login' ? '0%' : '50%' }}></div>
           </div>
-
+          
+          <OAuthButtons />
+          
           <div className="forms-container">
             <div className={`form-section ${activeTab === 'login' ? 'active' : ''}`}>
               <form onSubmit={handleLogin}>

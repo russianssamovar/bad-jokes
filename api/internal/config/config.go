@@ -12,12 +12,22 @@ import (
 type Config struct {
 	Env        string         `yaml:"env" env:"ENV" env-default:"local" env-required:"true"`
 	Db         DatabaseConfig `yaml:"db"`
+	OAuth      OAuthConfig    `yaml:"oauth"`
 	HTTPServer HTTPServer     `yaml:"http_server"`
 	JWTSecret  string         `yaml:"jwt_secret" env:"JWT_SECRET" env-required:"true"`
 }
 
+type OAuthConfig struct {
+	GoogleClientID     string `env:"GOOGLE_CLIENT_ID" required:"false"`
+	GoogleClientSecret string `env:"GOOGLE_CLIENT_SECRET" required:"false"`
+	GithubClientID     string `env:"GITHUB_CLIENT_ID" required:"false"`
+	GithubClientSecret string `env:"GITHUB_CLIENT_SECRET" required:"false"`
+	BaseURL            string `env:"BASE_OAUTH_URL" default:"http://localhost:9999"`
+	CallbackURL        string `env:"CALLBACK_OAUTH_URL" default:"http://localhost:5173"`
+}
+
 type HTTPServer struct {
-	Address     string        `yaml:"address" env:"HTTP_SERVER_ADDRESS" env-default:"localhost:8080"`
+	Address     string        `yaml:"address" env:"HTTP_SERVER_ADDRESS" env-default:"localhost:9999"`
 	Timeout     time.Duration `yaml:"timeout" env:"HTTP_SERVER_TIMEOUT" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env:"HTTP_SERVER_IDLE_TIMEOUT" env-default:"60s"`
 }

@@ -1,16 +1,12 @@
-import axios from "axios";
-
-const BASE_API_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.host}/api`;
-const API_URL = `${BASE_API_URL}/auth`;
-
+import { api } from '../utils/api';
 export const registerUser = async (username, email, password) => {
-  const response = await axios.post(`${API_URL}/register`, { username, email, password });
+  const response = await api.post(`/auth/register`, { username, email, password });
   return response.data;
 };
 
 export const loginUser = async (email, password) => {
-  const response = await axios.post(`${API_URL}/login`, { email, password });
-  return response.data; 
+  const response = await api.post(`/auth/login`, { email, password });
+  return response.data;
 };
 
 export const getCurrentUser = () => {
@@ -32,7 +28,17 @@ export const getCurrentUser = () => {
   }
 };
 
-
 export const logoutUser = () => {
   localStorage.removeItem("token");
+};
+
+export const handleOAuthCallback = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+
+  if (token) {
+    localStorage.setItem('token', token);
+    return getCurrentUser();
+  }
+  return null;
 };

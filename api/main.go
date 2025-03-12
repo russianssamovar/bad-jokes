@@ -46,12 +46,13 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(commentRepo, log)
 	entityHandler := handlers.NewEntityHandler(entityRepo, log)
 	authHandler := handlers.NewAuthHandler(userRepo, cfg, log)
+	oauthHandler := handlers.NewOAuthHandler(userRepo, cfg, log)
 	adminHandler := handlers.NewAdminHandler(userRepo, jokesRepo, commentRepo, log)
 
 	authMiddleware := middleware.NewAuthMiddleware(cfg, log)
 
 	mux := http.NewServeMux()
-	setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, adminHandler, authMiddleware)
+	setupRoutes(mux, jokesHandler, commentHandler, entityHandler, authHandler, adminHandler, oauthHandler, authMiddleware)
 	handler := corsMiddleware(mux)
 
 	listenAddr := flag.String("listenaddr", cfg.HTTPServer.Address, "HTTP server listen address")
@@ -71,12 +72,26 @@ func setupRoutes(
 	entityHandler *handlers.EntityHandler,
 	authHandler *handlers.AuthHandler,
 	adminHandler *handlers.AdminHandler,
+	oauthHandler *handlers.OAuthHandler,
 	authMiddleware *middleware.AuthMiddleware,
 ) {
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
 
-	// Jokes list and create
+	// OAuth routes
+	mux.HandleFunc("/api/auth/google/login", func(w http.ResponseWriter, r *http.Request) {
+		oauthHandler.InitiateOAuth(w, r, "google")
+	})
+	mux.HandleFunc("/api/auth/google/callback", func(w http.ResponseWriter, r *http.Request) {
+		oauthHandler.OAuthCallback(w, r, "google")
+	})
+	mux.HandleFunc("/api/auth/github/login", func(w http.ResponseWriter, r *http.Request) {
+		oauthHandler.InitiateOAuth(w, r, "github")
+	})
+	mux.HandleFunc("/api/auth/github/callback", func(w http.ResponseWriter, r *http.Request) {
+		oauthHandler.OAuthCallback(w, r, "github")
+	})
+
 	mux.Handle("/api/jokes", authMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:

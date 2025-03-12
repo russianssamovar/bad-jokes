@@ -11,6 +11,7 @@ import AdminUsers from './components/admin/AdminUsers';
 import AdminModerationLogs from './components/admin/AdminModerationLogs';
 import AdminStats from './components/admin/AdminStats';
 import AdminPanel from "./components/admin/AdminPanel";
+import OAuthCallback from "./pages/OAuthCallback.jsx";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/auth/callback" element={<OAuthCallback />} />
                     <Route path="/create" element={<CreateJoke />} />
                     <Route path="/joke/:jokeId" element={<JokeDetail />} />
                     <Route path="/admin" element={<AdminPanel />} />
