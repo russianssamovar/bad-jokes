@@ -239,13 +239,15 @@ func setupRoutes(
 		}
 	}))
 
-	mux.Handle("/api/admin/users/set-status", authMiddleware.RequireAdmin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			adminHandler.SetUserAdminStatus(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})))
+	mux.Handle("/api/admin/users/set-status", authMiddleware.Middleware(
+		authMiddleware.RequireAdmin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				adminHandler.SetUserAdminStatus(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		})),
+	))
 
 	mux.Handle("/api/admin/logs", authMiddleware.Middleware(
 		authMiddleware.RequireAdmin(http.HandlerFunc(adminHandler.GetModLogs)),
