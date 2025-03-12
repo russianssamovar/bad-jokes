@@ -88,16 +88,11 @@ func validateJokeContent(content string) error {
 
 	const (
 		minLength = 5
-		maxLength = 10000
 	)
 
 	contentLength := len(content)
 	if contentLength < minLength {
 		return fmt.Errorf("joke content must be at least %d characters", minLength)
-	}
-
-	if contentLength > maxLength {
-		return fmt.Errorf("joke content must be at most %d characters", maxLength)
 	}
 
 	if strings.Contains(strings.ToLower(content), "<script") {
