@@ -6,7 +6,7 @@ export const getUsers = async (page = 1, pageSize = 20) => {
 };
 
 export const setUserAdminStatus = async (userId, isAdmin) => {
-    const response = await api.post('/admin/users/admin-status', { user_id: userId, is_admin: isAdmin });
+    const response = await api.post('/admin/users/set-status', { user_id: userId, is_admin: isAdmin });
     return response.data;
 };
 
