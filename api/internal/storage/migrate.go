@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
 )
 
 func Migrate(db *sql.DB, migrationsDir string) error {
@@ -18,14 +21,36 @@ func Migrate(db *sql.DB, migrationsDir string) error {
 		return fmt.Errorf("failed to read migrations directory: %w", err)
 	}
 
+	var migrationFiles []string
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".sql" {
-			if err := executeMigration(db, migrationsDir, file.Name()); err != nil {
-				return err
-			}
+			migrationFiles = append(migrationFiles, file.Name())
+		}
+	}
+
+	sort.Slice(migrationFiles, func(i, j int) bool {
+		numI := extractMigrationNumber(migrationFiles[i])
+		numJ := extractMigrationNumber(migrationFiles[j])
+		return numI < numJ
+	})
+
+	for _, filename := range migrationFiles {
+		if err := executeMigration(db, migrationsDir, filename); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func extractMigrationNumber(filename string) int {
+	re := regexp.MustCompile(`^(\d+)`)
+	match := re.FindStringSubmatch(filename)
+	if len(match) > 1 {
+		if num, err := strconv.Atoi(match[1]); err == nil {
+			return num
+		}
+	}
+	return 0
 }
 
 func createMigrationsTable(db *sql.DB) error {
